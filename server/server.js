@@ -8,6 +8,7 @@ const connectDB = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
 const testRoutes = require("./routes/testRoutes");
 const userRoutes = require("./routes/userRoutes");
+const productRoutes = require("./routes/productRoutes");
 
 // Load env vars
 dotenv.config();
@@ -22,6 +23,7 @@ app.use(express.json());
 app.use(cors());
 app.use(cookieParser());
 app.use(morgan("dev"));
+app.use("/api/products", productRoutes);
 
 // Test route
 app.get("/", (req, res) => {
