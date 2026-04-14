@@ -23,6 +23,7 @@ const userSchema = new mongoose.Schema(
     phone: {
       type: String,
       required: true,
+      trim: true,
     },
 
     role: {
@@ -49,6 +50,7 @@ const userSchema = new mongoose.Schema(
 
     collegeName: {
       type: String,
+      trim: true,
     },
 
     // Ban & Safety System
@@ -60,6 +62,11 @@ const userSchema = new mongoose.Schema(
     isBanned: {
       type: Boolean,
       default: false,
+    },
+
+    banReason: {
+      type: String,
+      trim: true,
     },
 
     // Profile

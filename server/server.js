@@ -9,6 +9,8 @@ const authRoutes = require("./routes/authRoutes");
 const testRoutes = require("./routes/testRoutes");
 const userRoutes = require("./routes/userRoutes");
 const productRoutes = require("./routes/productRoutes");
+const orderRoutes = require("./routes/orderRoutes");
+const adminRoutes = require("./routes/adminRoutes");
 
 // Load env vars
 dotenv.config();
@@ -23,7 +25,6 @@ app.use(express.json());
 app.use(cors());
 app.use(cookieParser());
 app.use(morgan("dev"));
-app.use("/api/products", productRoutes);
 
 // Test route
 app.get("/", (req, res) => {
@@ -33,7 +34,9 @@ app.get("/", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/test", testRoutes);
 app.use("/api/users", userRoutes);
-
+app.use("/api/products", productRoutes);
+app.use("/api/orders", orderRoutes);
+app.use("/api/admin", adminRoutes);
 
 // Server
 const PORT = process.env.PORT || 3001;

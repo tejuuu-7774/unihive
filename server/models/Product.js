@@ -21,6 +21,7 @@ const productSchema = new mongoose.Schema(
     category: {
       type: String,
       required: true,
+      trim: true,
     },
 
     images: [
@@ -59,6 +60,7 @@ const productSchema = new mongoose.Schema(
     stock: {
       type: Number,
       default: 1,
+      min: 0,
     },
 
     // ⭐ Ratings (future use)
