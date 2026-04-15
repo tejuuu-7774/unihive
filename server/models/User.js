@@ -25,7 +25,10 @@ const userSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
-
+    whatsappNumber: {
+      type: String,
+      trim: true,
+    },
     role: {
       type: String,
       enum: ["user", "seller", "admin"],
@@ -77,6 +80,7 @@ const userSchema = new mongoose.Schema(
     bio: {
       type: String,
     },
+    
   },
   { timestamps: true }
 );

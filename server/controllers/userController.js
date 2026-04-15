@@ -120,25 +120,65 @@ exports.updateProfile = asyncHandler(async (req, res) => {
     throw new AppError("User not found", 404);
   }
 
+  // Name
   if (isProvided(req.body.name)) {
-    user.name = req.body.name;
+    user.name = req.body.name.trim();
   }
 
+  // Phone
   if (isProvided(req.body.phone)) {
-    user.phone = req.body.phone;
+    const phone = req.body.phone.toString().trim();
+
+    if (!/^\d{10,15}$/.test(phone)) {
+      throw new AppError(
+        "Phone number must be digits only (10–15 digits, include country code)",
+        400
+      );
+    }
+
+    user.phone = phone;
   }
 
+  // WhatsApp Number (optional override)
+  if (isProvided(req.body.whatsappNumber)) {
+    const whatsapp = req.body.whatsappNumber.toString().trim();
+
+    if (!/^\d{10,15}$/.test(whatsapp)) {
+      throw new AppError(
+        "WhatsApp number must be digits only (10–15 digits, include country code)",
+        400
+      );
+    }
+
+    user.whatsappNumber = whatsapp;
+  }
+
+  // Bio
   if (isProvided(req.body.bio)) {
-    user.bio = req.body.bio;
+    user.bio = req.body.bio.trim();
   }
 
+  // Avatar
   if (isProvided(req.body.avatar)) {
     user.avatar = req.body.avatar;
   }
 
   await user.save();
 
-  successResponse(res, user, "Profile updated");
+  const sanitizedUser = {
+    _id: user._id,
+    name: user.name,
+    email: user.email,
+    phone: user.phone,
+    whatsappNumber: user.whatsappNumber,
+    bio: user.bio,
+    avatar: user.avatar,
+    role: user.role,
+    isVerified: user.isVerified,
+    verificationStatus: user.verificationStatus,
+  };
+
+  successResponse(res, sanitizedUser, "Profile updated");
 });
 
 exports.deleteAccount = asyncHandler(async (req, res) => {
