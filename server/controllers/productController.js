@@ -1,192 +1,237 @@
 const Product = require("../models/Product");
-const { isValidObjectId, isProvided } = require("../utils/validation");
+const Review = require("../models/Review");
+const Order = require("../models/Order");
+const asyncHandler = require("../utils/asyncHandler");
+const AppError = require("../utils/AppError");
+const { isValidObjectId, isProvided, parseSort } = require("../utils/validation");
 
-// 🏪 Create Product (Seller Only)
-exports.createProduct = async (req, res) => {
-  try {
-    const {
-      title,
-      description,
-      price,
-      category,
-      productType,
-      deliveryType,
-      stock,
-      images,
-    } = req.body;
+exports.createProduct = asyncHandler(async (req, res) => {
+  const {
+    title,
+    description,
+    price,
+    category,
+    productType,
+    deliveryType,
+    stock,
+    images,
+  } = req.body;
 
-    if (!title || !description || !category || !productType) {
-      return res.status(400).json({
-        message: "Title, description, category, and product type are required",
-      });
-    }
-
-    if (price === undefined || Number(price) < 0) {
-      return res.status(400).json({
-        message: "Price is required and must be 0 or greater",
-      });
-    }
-
-    const product = await Product.create({
-      title,
-      description,
-      price,
-      category,
-      productType,
-      deliveryType,
-      stock,
-      images,
-      seller: req.user._id,
-      sellerVerified: req.user.isVerified,
-    });
-
-    res.status(201).json(product);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+  if (!title || !description || !category || !productType) {
+    throw new AppError(
+      "Title, description, category, and product type are required",
+      400
+    );
   }
-};
 
-// 🌍 Get All Products (Public)
-exports.getProducts = async (req, res) => {
-  try {
-    const products = await Product.find({ isApproved: true })
-      .sort({ createdAt: -1 })
-      .select("-__v")
-      .populate("seller", "name collegeName");
-
-    res.json(products);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+  if (price === undefined || Number(price) < 0) {
+    throw new AppError("Price is required and must be 0 or greater", 400);
   }
-};
 
-// 🔍 Get Single Product
-exports.getProductById = async (req, res) => {
-  try {
-    if (!isValidObjectId(req.params.id)) {
-      return res.status(400).json({ message: "Invalid product id" });
-    }
+  const product = await Product.create({
+    title,
+    description,
+    price,
+    category,
+    productType,
+    deliveryType,
+    stock,
+    images,
+    seller: req.user._id,
+    sellerVerified: req.user.isVerified,
+    isApproved: false,
+    moderationStatus: "pending",
+  });
 
-    const product = await Product.findById(req.params.id)
-      .select("-__v")
-      .populate("seller", "name collegeName phone");
+  res.status(201).json(product);
+});
 
-    if (!product) {
-      return res.status(404).json({ message: "Product not found" });
-    }
+exports.getProducts = asyncHandler(async (req, res) => {
+  const {
+    category,
+    productType,
+    deliveryType,
+    search,
+    minPrice,
+    maxPrice,
+    seller,
+    sortBy,
+  } = req.query;
 
-    res.json(product);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+  const query = { isApproved: true };
+
+  if (category) {
+    query.category = category;
   }
-};
 
-exports.getMyProducts = async (req, res) => {
-  try {
-    const products = await Product.find({ seller: req.user._id })
-      .sort({ createdAt: -1 })
-      .select("-__v");
-
-    res.json(products);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+  if (productType) {
+    query.productType = productType;
   }
-};
 
-// ✏️ Update Product (Seller Only)
-exports.updateProduct = async (req, res) => {
-  try {
-    if (!isValidObjectId(req.params.id)) {
-      return res.status(400).json({ message: "Invalid product id" });
-    }
-
-    const product = await Product.findById(req.params.id);
-
-    if (!product) {
-      return res.status(404).json({ message: "Product not found" });
-    }
-
-    // Only seller can update
-    if (product.seller.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: "Not authorized" });
-    }
-
-    // Update fields safely
-    if (isProvided(req.body.title)) {
-      product.title = req.body.title;
-    }
-
-    if (isProvided(req.body.description)) {
-      product.description = req.body.description;
-    }
-
-    if (isProvided(req.body.price)) {
-      if (Number(req.body.price) < 0) {
-        return res.status(400).json({
-          message: "Price must be 0 or greater",
-        });
-      }
-      product.price = req.body.price;
-    }
-
-    if (isProvided(req.body.category)) {
-      product.category = req.body.category;
-    }
-
-    if (isProvided(req.body.productType)) {
-      product.productType = req.body.productType;
-    }
-
-    if (isProvided(req.body.deliveryType)) {
-      product.deliveryType = req.body.deliveryType;
-    }
-
-    if (isProvided(req.body.stock)) {
-      if (Number(req.body.stock) < 0) {
-        return res.status(400).json({
-          message: "Stock must be 0 or greater",
-        });
-      }
-      product.stock = req.body.stock;
-    }
-
-    if (isProvided(req.body.images)) {
-      product.images = req.body.images;
-    }
-
-    await product.save();
-
-    res.json(product);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+  if (deliveryType) {
+    query.deliveryType = deliveryType;
   }
-};
 
-// 🗑 Delete Product (Seller or Admin)
-exports.deleteProduct = async (req, res) => {
-  try {
-    if (!isValidObjectId(req.params.id)) {
-      return res.status(400).json({ message: "Invalid product id" });
-    }
-
-    const product = await Product.findById(req.params.id);
-
-    if (!product) {
-      return res.status(404).json({ message: "Product not found" });
-    }
-
-    if (
-      product.seller.toString() !== req.user._id.toString() &&
-      req.user.role !== "admin"
-    ) {
-      return res.status(403).json({ message: "Not authorized" });
-    }
-
-    await require("../models/Order").deleteMany({ product: product._id });
-    await product.deleteOne();
-
-    res.json({ message: "Product deleted successfully" });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+  if (seller && isValidObjectId(seller)) {
+    query.seller = seller;
   }
-};
+
+  if (search) {
+    query.$or = [
+      { title: { $regex: search, $options: "i" } },
+      { description: { $regex: search, $options: "i" } },
+      { category: { $regex: search, $options: "i" } },
+    ];
+  }
+
+  if (minPrice || maxPrice) {
+    query.price = {};
+
+    if (minPrice) {
+      query.price.$gte = Number(minPrice);
+    }
+
+    if (maxPrice) {
+      query.price.$lte = Number(maxPrice);
+    }
+  }
+
+  const products = await Product.find(query)
+    .sort(
+      parseSort(
+        sortBy,
+        {
+          newest: { createdAt: -1 },
+          oldest: { createdAt: 1 },
+          priceAsc: { price: 1 },
+          priceDesc: { price: -1 },
+          ratingDesc: { rating: -1 },
+        },
+        { createdAt: -1 }
+      )
+    )
+    .select("-__v")
+    .populate("seller", "name collegeName");
+
+  res.json(products);
+});
+
+exports.getProductById = asyncHandler(async (req, res) => {
+  if (!isValidObjectId(req.params.id)) {
+    throw new AppError("Invalid product id", 400);
+  }
+
+  const product = await Product.findById(req.params.id)
+    .select("-__v")
+    .populate("seller", "name collegeName phone");
+
+  if (!product) {
+    throw new AppError("Product not found", 404);
+  }
+
+  const reviews = await Review.find({ product: product._id })
+    .sort({ createdAt: -1 })
+    .populate("user", "name");
+
+  res.json({
+    ...product.toObject(),
+    reviews,
+  });
+});
+
+exports.getMyProducts = asyncHandler(async (req, res) => {
+  const products = await Product.find({ seller: req.user._id })
+    .sort({ createdAt: -1 })
+    .select("-__v");
+
+  res.json(products);
+});
+
+exports.updateProduct = asyncHandler(async (req, res) => {
+  if (!isValidObjectId(req.params.id)) {
+    throw new AppError("Invalid product id", 400);
+  }
+
+  const product = await Product.findById(req.params.id);
+
+  if (!product) {
+    throw new AppError("Product not found", 404);
+  }
+
+  if (product.seller.toString() !== req.user._id.toString()) {
+    throw new AppError("Not authorized", 403);
+  }
+
+  if (isProvided(req.body.title)) {
+    product.title = req.body.title;
+  }
+
+  if (isProvided(req.body.description)) {
+    product.description = req.body.description;
+  }
+
+  if (isProvided(req.body.price)) {
+    if (Number(req.body.price) < 0) {
+      throw new AppError("Price must be 0 or greater", 400);
+    }
+
+    product.price = req.body.price;
+  }
+
+  if (isProvided(req.body.category)) {
+    product.category = req.body.category;
+  }
+
+  if (isProvided(req.body.productType)) {
+    product.productType = req.body.productType;
+  }
+
+  if (isProvided(req.body.deliveryType)) {
+    product.deliveryType = req.body.deliveryType;
+  }
+
+  if (isProvided(req.body.stock)) {
+    if (Number(req.body.stock) < 0) {
+      throw new AppError("Stock must be 0 or greater", 400);
+    }
+
+    product.stock = req.body.stock;
+  }
+
+  if (isProvided(req.body.images)) {
+    product.images = req.body.images;
+  }
+
+  product.isApproved = false;
+  product.moderationStatus = "pending";
+  product.moderationNote = undefined;
+
+  await product.save();
+
+  res.json(product);
+});
+
+exports.deleteProduct = asyncHandler(async (req, res) => {
+  if (!isValidObjectId(req.params.id)) {
+    throw new AppError("Invalid product id", 400);
+  }
+
+  const product = await Product.findById(req.params.id);
+
+  if (!product) {
+    throw new AppError("Product not found", 404);
+  }
+
+  if (
+    product.seller.toString() !== req.user._id.toString() &&
+    req.user.role !== "admin"
+  ) {
+    throw new AppError("Not authorized", 403);
+  }
+
+  await Order.deleteMany({ product: product._id });
+  await Review.deleteMany({ product: product._id });
+  await product.deleteOne();
+
+  res.json({ message: "Product deleted successfully" });
+});

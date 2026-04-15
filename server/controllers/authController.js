@@ -2,95 +2,81 @@ const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
+const asyncHandler = require("../utils/asyncHandler");
+const AppError = require("../utils/AppError");
+
 const EMAIL_REGEX = /^\S+@\S+\.\S+$/;
 
-// Generate JWT
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
+const generateToken = (id) =>
+  jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: "7d",
   });
-};
 
-// Register User
-exports.registerUser = async (req, res) => {
-  try {
-    const { name, email, password, phone } = req.body;
+exports.registerUser = asyncHandler(async (req, res) => {
+  const { name, email, password, phone } = req.body;
 
-    if (!name || !email || !password || !phone) {
-      return res.status(400).json({
-        message: "Name, email, password, and phone are required",
-      });
-    }
-
-    if (!EMAIL_REGEX.test(email)) {
-      return res.status(400).json({ message: "Please provide a valid email" });
-    }
-
-    if (password.length < 6) {
-      return res.status(400).json({
-        message: "Password must be at least 6 characters long",
-      });
-    }
-
-    const userExists = await User.findOne({ email });
-    if (userExists) {
-      return res.status(400).json({ message: "User already exists" });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const user = await User.create({
-      name,
-      email,
-      password: hashedPassword,
-      phone,
-    });
-
-    res.status(201).json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      phone: user.phone,
-      role: user.role,
-      isVerified: user.isVerified,
-      verificationStatus: user.verificationStatus,
-      token: generateToken(user._id),
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+  if (!name || !email || !password || !phone) {
+    throw new AppError("Name, email, password, and phone are required", 400);
   }
-};
 
-// Login User
-exports.loginUser = async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({ message: "Email and password are required" });
-    }
-
-    const user = await User.findOne({ email });
-
-    if (user && (await bcrypt.compare(password, user.password))) {
-      if (user.isBanned) {
-        return res.status(403).json({ message: "User is banned" });
-      }
-
-      res.json({
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        role: user.role,
-        isVerified: user.isVerified,
-        verificationStatus: user.verificationStatus,
-        token: generateToken(user._id),
-      });
-    } else {
-      res.status(401).json({ message: "Invalid credentials" });
-    }
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+  if (!EMAIL_REGEX.test(email)) {
+    throw new AppError("Please provide a valid email", 400);
   }
-};
+
+  if (password.length < 6) {
+    throw new AppError("Password must be at least 6 characters long", 400);
+  }
+
+  const userExists = await User.findOne({ email });
+
+  if (userExists) {
+    throw new AppError("User already exists", 400);
+  }
+
+  const user = await User.create({
+    name,
+    email,
+    password: await bcrypt.hash(password, 10),
+    phone,
+  });
+
+  res.status(201).json({
+    _id: user._id,
+    name: user.name,
+    email: user.email,
+    phone: user.phone,
+    role: user.role,
+    isVerified: user.isVerified,
+    verificationStatus: user.verificationStatus,
+    token: generateToken(user._id),
+  });
+});
+
+exports.loginUser = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    throw new AppError("Email and password are required", 400);
+  }
+
+  const user = await User.findOne({ email });
+
+  if (!user || !(await bcrypt.compare(password, user.password))) {
+    throw new AppError("Invalid credentials", 401);
+  }
+
+  if (user.isBanned) {
+    throw new AppError("User is banned", 403);
+  }
+
+  res.json({
+    _id: user._id,
+    name: user.name,
+    email: user.email,
+    phone: user.phone,
+    role: user.role,
+    isVerified: user.isVerified,
+    verificationStatus: user.verificationStatus,
+    token: generateToken(user._id),
+  });
+});

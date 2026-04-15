@@ -6,6 +6,7 @@ const {
   banUser,
   unbanUser,
   getAllProducts,
+  moderateProduct,
   getAllOrders,
   deleteUserByAdmin,
 } = require("../controllers/adminController");
@@ -21,6 +22,7 @@ router.put("/users/:id/ban", banUser);
 router.put("/users/:id/unban", unbanUser);
 router.delete("/users/:id", deleteUserByAdmin);
 router.get("/products", getAllProducts);
+router.put("/products/:id/moderate", moderateProduct);
 router.get("/orders", getAllOrders);
 
 module.exports = router;

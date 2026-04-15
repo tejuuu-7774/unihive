@@ -1,5 +1,4 @@
 const express = require("express");
-const router = express.Router();
 
 const {
   createProduct,
@@ -9,19 +8,19 @@ const {
   updateProduct,
   deleteProduct,
 } = require("../controllers/productController");
-
 const { protect, isSeller } = require("../middleware/authMiddleware");
+const reviewRoutes = require("./reviewRoutes");
 
-// 🌍 Public routes
+const router = express.Router();
+
 router.get("/", getProducts);
 router.get("/my", protect, isSeller, getMyProducts);
 router.get("/:id", getProductById);
 
-// 🏪 Seller routes
 router.post("/", protect, isSeller, createProduct);
 router.put("/:id", protect, isSeller, updateProduct);
-
-// 🗑 Delete (Seller or Admin)
 router.delete("/:id", protect, deleteProduct);
+
+router.use("/:productId/reviews", reviewRoutes);
 
 module.exports = router;

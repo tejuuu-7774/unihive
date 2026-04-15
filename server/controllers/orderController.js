@@ -1,210 +1,180 @@
 const Order = require("../models/Order");
 const Product = require("../models/Product");
+const asyncHandler = require("../utils/asyncHandler");
+const AppError = require("../utils/AppError");
 const { isValidObjectId } = require("../utils/validation");
 
-// 📦 Place Order Request
-exports.createOrder = async (req, res) => {
-  try {
-    const { productId, quantity = 1 } = req.body;
+exports.createOrder = asyncHandler(async (req, res) => {
+  const {
+    productId,
+    quantity = 1,
+    chatType = "whatsapp",
+    paymentType = "direct",
+  } = req.body;
 
-    if (!isValidObjectId(productId)) {
-      return res.status(400).json({ message: "Invalid product id" });
-    }
+  if (!isValidObjectId(productId)) {
+    throw new AppError("Invalid product id", 400);
+  }
 
-    if (!Number.isInteger(Number(quantity)) || Number(quantity) < 1) {
-      return res.status(400).json({
-        message: "Quantity must be a whole number greater than 0",
-      });
-    }
+  if (!Number.isInteger(Number(quantity)) || Number(quantity) < 1) {
+    throw new AppError("Quantity must be a whole number greater than 0", 400);
+  }
 
-    const product = await Product.findById(productId).populate("seller");
+  const product = await Product.findById(productId).populate("seller");
+
+  if (!product) {
+    throw new AppError("Product not found", 404);
+  }
+
+  if (!product.isApproved) {
+    throw new AppError("Product is not available", 400);
+  }
+
+  if (product.seller._id.toString() === req.user._id.toString()) {
+    throw new AppError("You cannot buy your own product", 400);
+  }
+
+  if (product.stock < Number(quantity)) {
+    throw new AppError("Insufficient stock", 400);
+  }
+
+  const existingActiveOrder = await Order.findOne({
+    buyer: req.user._id,
+    product: product._id,
+    status: { $in: ["requested", "accepted", "shipped"] },
+  });
+
+  if (existingActiveOrder) {
+    throw new AppError("You already have an active order for this product", 400);
+  }
+
+  const order = await Order.create({
+    buyer: req.user._id,
+    seller: product.seller._id,
+    product: product._id,
+    quantity: Number(quantity),
+    totalPrice: product.price * Number(quantity),
+    sellerContact: product.seller.phone,
+    chatType,
+    paymentType,
+  });
+
+  const populatedOrder = await Order.findById(order._id)
+    .select("-__v")
+    .populate("product", "title price images")
+    .populate("seller", "name phone")
+    .populate("buyer", "name");
+
+  res.status(201).json(populatedOrder);
+});
+
+exports.updateOrderStatus = asyncHandler(async (req, res) => {
+  const { status, paymentStatus } = req.body;
+
+  if (!isValidObjectId(req.params.id)) {
+    throw new AppError("Invalid order id", 400);
+  }
+
+  if (!status) {
+    throw new AppError("Status is required", 400);
+  }
+
+  const order = await Order.findById(req.params.id);
+
+  if (!order) {
+    throw new AppError("Order not found", 404);
+  }
+
+  if (
+    order.seller.toString() !== req.user._id.toString() &&
+    req.user.role !== "admin"
+  ) {
+    throw new AppError("Not authorized", 403);
+  }
+
+  const validTransitions = {
+    requested: ["accepted", "rejected"],
+    accepted: ["shipped"],
+    shipped: ["delivered"],
+  };
+
+  if (
+    !validTransitions[order.status] ||
+    !validTransitions[order.status].includes(status)
+  ) {
+    throw new AppError(
+      `Invalid status transition from ${order.status} to ${status}`,
+      400
+    );
+  }
+
+  if (status === "accepted") {
+    const product = await Product.findById(order.product);
 
     if (!product) {
-      return res.status(404).json({ message: "Product not found" });
+      throw new AppError("Product not found", 404);
     }
 
-    if (!product.isApproved) {
-      return res.status(400).json({ message: "Product is not available" });
+    if (product.stock < order.quantity) {
+      throw new AppError("Not enough stock to accept this order", 400);
     }
 
-    // ❌ Prevent self-buy
-    if (product.seller._id.toString() === req.user._id.toString()) {
-      return res.status(400).json({
-        message: "You cannot buy your own product",
-      });
-    }
-
-    // ❌ Optional: stock check
-    if (product.stock < quantity) {
-      return res.status(400).json({
-        message: "Insufficient stock",
-      });
-    }
-
-    const existingActiveOrder = await Order.findOne({
-      buyer: req.user._id,
-      product: product._id,
-      status: { $in: ["requested", "accepted", "shipped"] },
-    });
-
-    if (existingActiveOrder) {
-      return res.status(400).json({
-        message: "You already have an active order for this product",
-      });
-    }
-
-    const order = await Order.create({
-      buyer: req.user._id,
-      seller: product.seller._id,
-      product: product._id,
-      quantity: Number(quantity),
-      totalPrice: product.price * quantity,
-      sellerContact: product.seller.phone,
-    });
-
-    const populatedOrder = await Order.findById(order._id)
-      .select("-__v")
-      .populate("product", "title price images")
-      .populate("seller", "name phone")
-      .populate("buyer", "name");
-
-    res.status(201).json(populatedOrder);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+    product.stock -= order.quantity;
+    await product.save();
   }
-};
 
-// 🏪 Seller updates order status (STRICT FLOW)
-exports.updateOrderStatus = async (req, res) => {
-  try {
-    const { status } = req.body;
+  order.status = status;
 
-    if (!isValidObjectId(req.params.id)) {
-      return res.status(400).json({ message: "Invalid order id" });
-    }
-
-    if (!status) {
-      return res.status(400).json({ message: "Status is required" });
-    }
-
-    const order = await Order.findById(req.params.id);
-
-    if (!order) {
-      return res.status(404).json({ message: "Order not found" });
-    }
-
-    // Only seller
-    if (
-      order.seller.toString() !== req.user._id.toString() &&
-      req.user.role !== "admin"
-    ) {
-      return res.status(403).json({ message: "Not authorized" });
-    }
-
-    // 🔒 Allowed transitions
-    const validTransitions = {
-      requested: ["accepted", "rejected"],
-      accepted: ["shipped"],
-      shipped: ["delivered"],
-    };
-
-    const currentStatus = order.status;
-
-    if (
-      !validTransitions[currentStatus] ||
-      !validTransitions[currentStatus].includes(status)
-    ) {
-      return res.status(400).json({
-        message: `Invalid status transition from ${currentStatus} to ${status}`,
-      });
-    }
-
-    order.status = status;
-
-    if (status === "accepted") {
-      const product = await Product.findById(order.product);
-
-      if (!product) {
-        return res.status(404).json({ message: "Product not found" });
-      }
-
-      if (product.stock < order.quantity) {
-        return res.status(400).json({
-          message: "Not enough stock to accept this order",
-        });
-      }
-
-      product.stock -= order.quantity;
-      await product.save();
-    }
-
-    await order.save();
-
-    res.json(order);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+  if (paymentStatus) {
+    order.paymentStatus = paymentStatus;
   }
-};
 
-// 👤 Buyer cancels order (ONLY before accept)
-exports.cancelOrder = async (req, res) => {
-  try {
-    if (!isValidObjectId(req.params.id)) {
-      return res.status(400).json({ message: "Invalid order id" });
-    }
+  await order.save();
 
-    const order = await Order.findById(req.params.id);
+  res.json(order);
+});
 
-    if (!order) {
-      return res.status(404).json({ message: "Order not found" });
-    }
-
-    if (order.buyer.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: "Not authorized" });
-    }
-
-    if (order.status !== "requested") {
-      return res.status(400).json({
-        message: "Cannot cancel after seller accepted",
-      });
-    }
-
-    order.status = "cancelled";
-
-    await order.save();
-
-    res.json(order);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+exports.cancelOrder = asyncHandler(async (req, res) => {
+  if (!isValidObjectId(req.params.id)) {
+    throw new AppError("Invalid order id", 400);
   }
-};
 
-// 📜 Buyer orders
-exports.getMyOrders = async (req, res) => {
-  try {
-    const orders = await Order.find({ buyer: req.user._id })
-      .sort({ createdAt: -1 })
-      .select("-__v")
-      .populate("product", "title price images category")
-      .populate("seller", "name phone");
+  const order = await Order.findById(req.params.id);
 
-    res.json(orders);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+  if (!order) {
+    throw new AppError("Order not found", 404);
   }
-};
 
-// 🏪 Seller orders (IMPORTANT ADDITION)
-exports.getSellerOrders = async (req, res) => {
-  try {
-    const orders = await Order.find({ seller: req.user._id })
-      .sort({ createdAt: -1 })
-      .select("-__v")
-      .populate("product", "title price images category")
-      .populate("buyer", "name email phone");
-
-    res.json(orders);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+  if (order.buyer.toString() !== req.user._id.toString()) {
+    throw new AppError("Not authorized", 403);
   }
-};
+
+  if (order.status !== "requested") {
+    throw new AppError("Cannot cancel after seller accepted", 400);
+  }
+
+  order.status = "cancelled";
+  await order.save();
+
+  res.json(order);
+});
+
+exports.getMyOrders = asyncHandler(async (req, res) => {
+  const orders = await Order.find({ buyer: req.user._id })
+    .sort({ createdAt: -1 })
+    .select("-__v")
+    .populate("product", "title price images category")
+    .populate("seller", "name phone");
+
+  res.json(orders);
+});
+
+exports.getSellerOrders = asyncHandler(async (req, res) => {
+  const orders = await Order.find({ seller: req.user._id })
+    .sort({ createdAt: -1 })
+    .select("-__v")
+    .populate("product", "title price images category")
+    .populate("buyer", "name email phone");
+
+  res.json(orders);
+});

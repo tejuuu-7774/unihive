@@ -1,5 +1,4 @@
 const express = require("express");
-const router = express.Router();
 
 const {
   requestVerification,
@@ -9,18 +8,22 @@ const {
   updateProfile,
   deleteAccount,
 } = require("../controllers/userController");
-
 const { protect, authorizeRoles } = require("../middleware/authMiddleware");
+const { uploadStudentIdCard } = require("../middleware/uploadMiddleware");
 
-// 🔐 User routes
+const router = express.Router();
+
 router.get("/me", protect, getProfile);
 router.put("/me", protect, updateProfile);
 router.delete("/me", protect, deleteAccount);
 
-// 🎓 Verification
-router.put("/verify", protect, requestVerification);
+router.put(
+  "/verify",
+  protect,
+  uploadStudentIdCard.single("studentIdCard"),
+  requestVerification
+);
 
-// 🛠 Admin actions
 router.put("/approve/:id", protect, authorizeRoles("admin"), approveSeller);
 router.put("/reject/:id", protect, authorizeRoles("admin"), rejectSeller);
 
