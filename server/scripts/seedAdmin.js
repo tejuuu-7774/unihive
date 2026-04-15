@@ -1,51 +1,42 @@
+const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const bcrypt = require("bcryptjs");
-
-const connectDB = require("../config/db");
 const User = require("../models/User");
 
 dotenv.config();
 
 const seedAdmin = async () => {
   try {
-    await connectDB();
+    await mongoose.connect(process.env.MONGO_URI);
 
-    const { ADMIN_NAME, ADMIN_EMAIL, ADMIN_PASSWORD, ADMIN_PHONE } = process.env;
-
-    if (!ADMIN_NAME || !ADMIN_EMAIL || !ADMIN_PASSWORD || !ADMIN_PHONE) {
-      throw new Error(
-        "ADMIN_NAME, ADMIN_EMAIL, ADMIN_PASSWORD, and ADMIN_PHONE are required"
-      );
-    }
-
-    const existingAdmin = await User.findOne({ email: ADMIN_EMAIL });
+    const existingAdmin = await User.findOne({
+      email: process.env.ADMIN_EMAIL,
+    });
 
     if (existingAdmin) {
-      existingAdmin.name = ADMIN_NAME;
-      existingAdmin.phone = ADMIN_PHONE;
-      existingAdmin.role = "admin";
-      existingAdmin.isVerified = true;
-      existingAdmin.verificationStatus = "approved";
-      existingAdmin.password = await bcrypt.hash(ADMIN_PASSWORD, 10);
-      await existingAdmin.save();
-      console.log("Admin updated successfully");
-    } else {
-      await User.create({
-        name: ADMIN_NAME,
-        email: ADMIN_EMAIL,
-        password: await bcrypt.hash(ADMIN_PASSWORD, 10),
-        phone: ADMIN_PHONE,
-        role: "admin",
-        isVerified: true,
-        verificationStatus: "approved",
-      });
-
-      console.log("Admin created successfully");
+      console.log("Admin already exists");
+      process.exit();
     }
 
-    process.exit(0);
+    const hashedPassword = await bcrypt.hash(
+      process.env.ADMIN_PASSWORD,
+      10
+    );
+
+    await User.create({
+      name: process.env.ADMIN_NAME,
+      email: process.env.ADMIN_EMAIL,
+      password: hashedPassword,
+      phone: process.env.ADMIN_PHONE,
+      role: "admin",
+      isVerified: true,
+      verificationStatus: "approved",
+    });
+
+    console.log("Admin created successfully");
+    process.exit();
   } catch (error) {
-    console.error(error.message);
+    console.error(error);
     process.exit(1);
   }
 };

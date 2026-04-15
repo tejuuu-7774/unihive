@@ -3,6 +3,7 @@ const Product = require("../models/Product");
 const asyncHandler = require("../utils/asyncHandler");
 const AppError = require("../utils/AppError");
 const { isValidObjectId } = require("../utils/validation");
+const { successResponse } = require("../utils/response");
 
 exports.createOrder = asyncHandler(async (req, res) => {
   const {
@@ -65,7 +66,7 @@ exports.createOrder = asyncHandler(async (req, res) => {
     .populate("seller", "name phone")
     .populate("buyer", "name");
 
-  res.status(201).json(populatedOrder);
+  successResponse(res, populatedOrder, "Order placed successfully", 201);
 });
 
 exports.updateOrderStatus = asyncHandler(async (req, res) => {
@@ -131,7 +132,7 @@ exports.updateOrderStatus = asyncHandler(async (req, res) => {
 
   await order.save();
 
-  res.json(order);
+  successResponse(res, order, "Order status updated");
 });
 
 exports.cancelOrder = asyncHandler(async (req, res) => {
@@ -156,7 +157,7 @@ exports.cancelOrder = asyncHandler(async (req, res) => {
   order.status = "cancelled";
   await order.save();
 
-  res.json(order);
+  successResponse(res, order, "Order cancelled");
 });
 
 exports.getMyOrders = asyncHandler(async (req, res) => {
@@ -166,7 +167,7 @@ exports.getMyOrders = asyncHandler(async (req, res) => {
     .populate("product", "title price images category")
     .populate("seller", "name phone");
 
-  res.json(orders);
+  successResponse(res, orders, "Orders fetched");
 });
 
 exports.getSellerOrders = asyncHandler(async (req, res) => {
@@ -176,5 +177,5 @@ exports.getSellerOrders = asyncHandler(async (req, res) => {
     .populate("product", "title price images category")
     .populate("buyer", "name email phone");
 
-  res.json(orders);
+  successResponse(res, orders, "Seller orders fetched");
 });

@@ -4,6 +4,7 @@ const Order = require("../models/Order");
 const asyncHandler = require("../utils/asyncHandler");
 const AppError = require("../utils/AppError");
 const { isValidObjectId, isProvided, parseSort } = require("../utils/validation");
+const { successResponse } = require("../utils/response");
 
 exports.createProduct = asyncHandler(async (req, res) => {
   const {
@@ -43,7 +44,7 @@ exports.createProduct = asyncHandler(async (req, res) => {
     moderationStatus: "pending",
   });
 
-  res.status(201).json(product);
+  successResponse(res, product, "Product created", 201);
 });
 
 exports.getProducts = asyncHandler(async (req, res) => {
@@ -56,21 +57,15 @@ exports.getProducts = asyncHandler(async (req, res) => {
     maxPrice,
     seller,
     sortBy,
+    page = 1,
+    limit = 10,
   } = req.query;
 
   const query = { isApproved: true };
 
-  if (category) {
-    query.category = category;
-  }
-
-  if (productType) {
-    query.productType = productType;
-  }
-
-  if (deliveryType) {
-    query.deliveryType = deliveryType;
-  }
+  if (category) query.category = category;
+  if (productType) query.productType = productType;
+  if (deliveryType) query.deliveryType = deliveryType;
 
   if (seller && isValidObjectId(seller)) {
     query.seller = seller;
@@ -86,15 +81,15 @@ exports.getProducts = asyncHandler(async (req, res) => {
 
   if (minPrice || maxPrice) {
     query.price = {};
-
-    if (minPrice) {
-      query.price.$gte = Number(minPrice);
-    }
-
-    if (maxPrice) {
-      query.price.$lte = Number(maxPrice);
-    }
+    if (minPrice) query.price.$gte = Number(minPrice);
+    if (maxPrice) query.price.$lte = Number(maxPrice);
   }
+
+  const pageNumber = Number(page);
+  const pageSize = Number(limit);
+  const skip = (pageNumber - 1) * pageSize;
+
+  const total = await Product.countDocuments(query);
 
   const products = await Product.find(query)
     .sort(
@@ -110,10 +105,21 @@ exports.getProducts = asyncHandler(async (req, res) => {
         { createdAt: -1 }
       )
     )
+    .skip(skip)
+    .limit(pageSize)
     .select("-__v")
     .populate("seller", "name collegeName");
 
-  res.json(products);
+  successResponse(
+    res,
+    {
+      products,
+      page: pageNumber,
+      pages: Math.ceil(total / pageSize),
+      total,
+    },
+    "Products fetched successfully"
+  );
 });
 
 exports.getProductById = asyncHandler(async (req, res) => {
@@ -133,10 +139,7 @@ exports.getProductById = asyncHandler(async (req, res) => {
     .sort({ createdAt: -1 })
     .populate("user", "name");
 
-  res.json({
-    ...product.toObject(),
-    reviews,
-  });
+  successResponse(res, product, "Product fetched");
 });
 
 exports.getMyProducts = asyncHandler(async (req, res) => {
@@ -208,7 +211,7 @@ exports.updateProduct = asyncHandler(async (req, res) => {
 
   await product.save();
 
-  res.json(product);
+  successResponse(res, product, "Product updated");
 });
 
 exports.deleteProduct = asyncHandler(async (req, res) => {
@@ -233,5 +236,5 @@ exports.deleteProduct = asyncHandler(async (req, res) => {
   await Review.deleteMany({ product: product._id });
   await product.deleteOne();
 
-  res.json({ message: "Product deleted successfully" });
+  successResponse(res, null, "Product deleted successfully");
 });

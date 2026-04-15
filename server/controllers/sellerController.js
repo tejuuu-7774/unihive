@@ -1,6 +1,7 @@
 const Product = require("../models/Product");
 const Order = require("../models/Order");
 const asyncHandler = require("../utils/asyncHandler");
+const { successResponse } = require("../utils/response");
 
 exports.getSellerAnalytics = asyncHandler(async (req, res) => {
   const [products, orders] = await Promise.all([

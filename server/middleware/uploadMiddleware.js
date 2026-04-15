@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const multer = require("multer");
-
+const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
 const AppError = require("../utils/AppError");
 
 const uploadDir = path.join(__dirname, "..", "uploads", "student-ids");
@@ -18,9 +18,8 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-  if (!file.mimetype.startsWith("image/")) {
-    cb(new AppError("Only image uploads are allowed", 400));
-    return;
+  if (!allowedTypes.includes(file.mimetype)) {
+    return cb(new AppError("Only JPG, PNG, WEBP images are allowed", 400));
   }
 
   cb(null, true);

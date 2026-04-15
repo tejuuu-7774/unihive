@@ -3,7 +3,9 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
 const asyncHandler = require("../utils/asyncHandler");
+const { successResponse } = require("../utils/response");
 const AppError = require("../utils/AppError");
+
 
 const EMAIL_REGEX = /^\S+@\S+\.\S+$/;
 
@@ -40,16 +42,21 @@ exports.registerUser = asyncHandler(async (req, res) => {
     phone,
   });
 
-  res.status(201).json({
-    _id: user._id,
-    name: user.name,
-    email: user.email,
-    phone: user.phone,
-    role: user.role,
-    isVerified: user.isVerified,
-    verificationStatus: user.verificationStatus,
-    token: generateToken(user._id),
-  });
+  successResponse(
+    res,
+    {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+      isVerified: user.isVerified,
+      verificationStatus: user.verificationStatus,
+      token: generateToken(user._id),
+    },
+    "User registered successfully",
+    201
+  );
 });
 
 exports.loginUser = asyncHandler(async (req, res) => {
@@ -69,14 +76,18 @@ exports.loginUser = asyncHandler(async (req, res) => {
     throw new AppError("User is banned", 403);
   }
 
-  res.json({
-    _id: user._id,
-    name: user.name,
-    email: user.email,
-    phone: user.phone,
-    role: user.role,
-    isVerified: user.isVerified,
-    verificationStatus: user.verificationStatus,
-    token: generateToken(user._id),
-  });
+  successResponse(
+    res,
+    {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+      isVerified: user.isVerified,
+      verificationStatus: user.verificationStatus,
+      token: generateToken(user._id),
+    },
+    "Login successful"
+  );
 });

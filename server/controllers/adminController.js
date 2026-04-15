@@ -5,6 +5,7 @@ const Review = require("../models/Review");
 const asyncHandler = require("../utils/asyncHandler");
 const AppError = require("../utils/AppError");
 const { isValidObjectId, isProvided } = require("../utils/validation");
+const { successResponse } = require("../utils/response");
 
 const sanitizeUser = (user) => ({
   _id: user._id,
@@ -24,7 +25,7 @@ const sanitizeUser = (user) => ({
 
 exports.getAllUsers = asyncHandler(async (req, res) => {
   const users = await User.find().select("-password").sort({ createdAt: -1 });
-  res.json(users);
+  successResponse(res, users, "Users fetched");
 });
 
 exports.getVerificationRequests = asyncHandler(async (req, res) => {
@@ -35,7 +36,7 @@ exports.getVerificationRequests = asyncHandler(async (req, res) => {
     .select("-password")
     .sort({ createdAt: -1 });
 
-  res.json(users);
+  successResponse(res, users, "Verification requests fetched");
 });
 
 exports.banUser = asyncHandler(async (req, res) => {
@@ -67,10 +68,7 @@ exports.banUser = asyncHandler(async (req, res) => {
 
   await user.save();
 
-  res.json({
-    message: "User banned successfully",
-    user: sanitizeUser(user),
-  });
+  successResponse(res, sanitizeUser(user), "User banned successfully"); 
 });
 
 exports.unbanUser = asyncHandler(async (req, res) => {
@@ -89,10 +87,7 @@ exports.unbanUser = asyncHandler(async (req, res) => {
 
   await user.save();
 
-  res.json({
-    message: "User unbanned successfully",
-    user: sanitizeUser(user),
-  });
+  successResponse(res, sanitizeUser(user), "User unbanned successfully");
 });
 
 exports.getAllProducts = asyncHandler(async (req, res) => {
@@ -101,7 +96,7 @@ exports.getAllProducts = asyncHandler(async (req, res) => {
     .select("-__v")
     .populate("seller", "name email phone role isVerified");
 
-  res.json(products);
+  successResponse(res, products, "All products fetched");
 });
 
 exports.moderateProduct = asyncHandler(async (req, res) => {
@@ -126,10 +121,7 @@ exports.moderateProduct = asyncHandler(async (req, res) => {
   product.moderationNote = note;
   await product.save();
 
-  res.json({
-    message: `Product ${status} successfully`,
-    product,
-  });
+  successResponse(res, product, `Product ${status} successfully`);
 });
 
 exports.getAllOrders = asyncHandler(async (req, res) => {
@@ -140,7 +132,7 @@ exports.getAllOrders = asyncHandler(async (req, res) => {
     .populate("seller", "name email phone")
     .populate("buyer", "name email phone");
 
-  res.json(orders);
+  successResponse(res, orders, "All orders fetched");
 });
 
 exports.deleteUserByAdmin = asyncHandler(async (req, res) => {
@@ -175,5 +167,5 @@ exports.deleteUserByAdmin = asyncHandler(async (req, res) => {
   await Product.deleteMany({ seller: user._id });
   await user.deleteOne();
 
-  res.json({ message: "User deleted successfully" });
+  successResponse(res, null, "User deleted successfully");
 });

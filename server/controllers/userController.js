@@ -7,6 +7,7 @@ const Review = require("../models/Review");
 const { isValidObjectId, isProvided } = require("../utils/validation");
 const asyncHandler = require("../utils/asyncHandler");
 const AppError = require("../utils/AppError");
+const { successResponse } = require("../utils/response");
 
 exports.requestVerification = asyncHandler(async (req, res) => {
   const { collegeName, studentIdCard } = req.body;
@@ -38,11 +39,14 @@ exports.requestVerification = asyncHandler(async (req, res) => {
 
   await user.save();
 
-  res.json({
-    message: "Verification request submitted",
-    verificationStatus: user.verificationStatus,
-    studentIdCard: user.studentIdCard,
-  });
+  successResponse(
+    res,
+    {
+      verificationStatus: user.verificationStatus,
+      studentIdCard: user.studentIdCard,
+    },
+    "Verification request submitted"
+  );
 });
 
 exports.approveSeller = asyncHandler(async (req, res) => {
@@ -62,16 +66,17 @@ exports.approveSeller = asyncHandler(async (req, res) => {
 
   await user.save();
 
-  res.json({
-    message: "Seller approved",
-    user: {
+  successResponse(
+    res,
+    {
       _id: user._id,
       name: user.name,
       role: user.role,
       isVerified: user.isVerified,
       verificationStatus: user.verificationStatus,
     },
-  });
+    "Seller approved"
+  );
 });
 
 exports.rejectSeller = asyncHandler(async (req, res) => {
@@ -91,20 +96,21 @@ exports.rejectSeller = asyncHandler(async (req, res) => {
 
   await user.save();
 
-  res.json({
-    message: "Seller rejected",
-    user: {
+  successResponse(
+    res,
+    {
       _id: user._id,
       name: user.name,
       role: user.role,
       isVerified: user.isVerified,
       verificationStatus: user.verificationStatus,
     },
-  });
+    "Seller rejected"
+  );
 });
 
 exports.getProfile = asyncHandler(async (req, res) => {
-  res.json(req.user);
+  successResponse(res, req.user, "Profile fetched");
 });
 
 exports.updateProfile = asyncHandler(async (req, res) => {
@@ -132,7 +138,7 @@ exports.updateProfile = asyncHandler(async (req, res) => {
 
   await user.save();
 
-  res.json(user);
+  successResponse(res, user, "Profile updated");
 });
 
 exports.deleteAccount = asyncHandler(async (req, res) => {
@@ -159,8 +165,9 @@ exports.deleteAccount = asyncHandler(async (req, res) => {
   await Product.deleteMany({ seller: user._id });
   await user.deleteOne();
 
-  res.json({
-    message: "Account deleted successfully",
-    deletedProducts: sellerProductIds.length,
-  });
+  successResponse(
+    res,
+    { deletedProducts: sellerProductIds.length },
+    "Account deleted successfully"
+  );
 });

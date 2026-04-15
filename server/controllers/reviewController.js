@@ -4,6 +4,7 @@ const Order = require("../models/Order");
 const AppError = require("../utils/AppError");
 const asyncHandler = require("../utils/asyncHandler");
 const { isValidObjectId } = require("../utils/validation");
+const { successResponse } = require("../utils/response");
 
 const syncProductRatings = async (productId) => {
   const reviews = await Review.find({ product: productId });
@@ -28,7 +29,7 @@ exports.getProductReviews = asyncHandler(async (req, res) => {
     .sort({ createdAt: -1 })
     .populate("user", "name");
 
-  res.json(reviews);
+  successResponse(res, reviews, "Reviews fetched");
 });
 
 exports.createOrUpdateReview = asyncHandler(async (req, res) => {
@@ -75,7 +76,7 @@ exports.createOrUpdateReview = asyncHandler(async (req, res) => {
 
   await syncProductRatings(productId);
 
-  res.status(201).json(review);
+  successResponse(res, review, "Review submitted", 201);
 });
 
 exports.deleteReview = asyncHandler(async (req, res) => {
@@ -100,5 +101,5 @@ exports.deleteReview = asyncHandler(async (req, res) => {
   await review.deleteOne();
   await syncProductRatings(productId);
 
-  res.json({ message: "Review deleted successfully" });
+  successResponse(res, null, "Review deleted successfully");
 });

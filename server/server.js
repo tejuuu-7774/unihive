@@ -36,7 +36,9 @@ app.use(
 );
 
 app.use("/api/auth", authRoutes);
-app.use("/api/test", testRoutes);
+if (process.env.NODE_ENV !== "production") {
+  app.use("/api/test", testRoutes);
+}
 app.use("/api/users", userRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
