@@ -3,71 +3,106 @@
 import { useState } from "react";
 import { apiRequest } from "@/lib/api";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
+import Link from "next/link";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const [showPassword, setShowPassword] = useState(false);
+  const [form, setForm] = useState({ name: "", email: "", password: "", phone: "" });
 
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    password: "",
-    phone: "",
-  });
-
-  const handleSubmit = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
-      const res = await apiRequest("/auth/login", "POST", form);
-
-      console.log("FULL RESPONSE:", res);
-
+      const res = await apiRequest("/auth/register", "POST", form);
       localStorage.setItem("token", res.data.token);
-
       router.push("/dashboard");
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        alert(err.message);
-      } else {
-        alert("Something went wrong");
-      }
+      alert(err instanceof Error ? err.message : "Something went wrong");
     }
   };
   
   return (
-    <main className="flex items-center justify-center h-screen">
-      <div className="border p-8 rounded w-[350px]">
-        <h1 className="text-2xl font-bold mb-4">Register</h1>
+    <main className="relative flex items-center justify-center min-h-screen bg-white text-slate-900 selection:bg-[#7C3AED] selection:text-white">
+      <div className="absolute inset-0 z-0 opacity-[0.02] pointer-events-none" 
+           style={{ backgroundImage: `url('/logo-icon.png')`, backgroundSize: "180px", backgroundPosition: "center" }} />
 
-        <input
-          placeholder="Name"
-          className="w-full border p-2 mb-3 rounded"
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
-        />
+      <div className="relative z-10 w-full max-w-[460px] px-6 py-12">
+        <div className="border border-slate-200 bg-white p-12 shadow-xl shadow-slate-100/50">
+          <div className="mb-10 text-center">
+            <Link href="/" className="inline-flex items-center gap-2 mb-8 group">
+              <Image src="/logo-icon.png" alt="UniHive" width={28} height={28} className="group-hover:scale-110 transition-transform" />
+              <span className="text-base font-bold uppercase tracking-tighter">UniHive</span>
+            </Link>
+            <h1 className="text-3xl font-black uppercase tracking-tight">Create Account</h1>
+          </div>
 
-        <input
-          placeholder="Email"
-          className="w-full border p-2 mb-3 rounded"
-          onChange={(e) => setForm({ ...form, email: e.target.value })}
-        />
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Full Name</label>
+              <input
+                placeholder="E.G. JOHN DOE"
+                className="w-full border border-slate-200 p-4 text-xs font-bold uppercase tracking-widest focus:border-[#7C3AED] focus:outline-none transition-colors"
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+              />
+            </div>
 
-        <input
-          placeholder="Password"
-          type="password"
-          className="w-full border p-2 mb-3 rounded"
-          onChange={(e) => setForm({ ...form, password: e.target.value })}
-        />
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Email Address</label>
+              <input
+                placeholder="STUDENT@UNIVERSITY.EDU"
+                type="email"
+                className="w-full border border-slate-200 p-4 text-xs font-bold uppercase tracking-widest focus:border-[#7C3AED] focus:outline-none transition-colors"
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+              />
+            </div>
 
-        <input
-          placeholder="Phone"
-          className="w-full border p-2 mb-4 rounded"
-          onChange={(e) => setForm({ ...form, phone: e.target.value })}
-        />
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Security Password</label>
+              <div className="relative">
+                <input
+                  placeholder="••••••••"
+                  type={showPassword ? "text" : "password"}
+                  className="w-full border border-slate-200 p-4 pr-12 text-xs font-bold uppercase tracking-widest focus:border-[#7C3AED] focus:outline-none transition-colors"
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                />
+                <button 
+                  type="button" 
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-900 transition-colors"
+                >
+                  {showPassword ? (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                  ) : (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  )}
+                </button>
+              </div>
+            </div>
 
-        <button
-          onClick={handleSubmit}
-          className="w-full bg-purple-600 text-white py-2 rounded"
-        >
-          Register
-        </button>
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Phone Number</label>
+              <input
+                placeholder="+91 9900-0000"
+                className="w-full border border-slate-200 p-4 text-xs font-bold uppercase tracking-widest focus:border-[#7C3AED] focus:outline-none transition-colors"
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              />
+            </div>
+
+            <div className="pt-4">
+              <button type="submit" className="w-full bg-slate-900 text-white py-5 text-[11px] font-bold uppercase tracking-[0.3em] hover:bg-[#7C3AED] transition-all">
+                Register
+              </button>
+            </div>
+          </form>
+
+          <div className="mt-10 flex flex-col items-center gap-4 border-t border-slate-100 pt-8">
+            <Link href="/login" className="text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-[#7C3AED]">Sign In</Link>
+            <Link href="/" className="text-[10px] font-bold uppercase tracking-widest text-slate-300 hover:text-slate-900 transition-colors underline underline-offset-4 decoration-slate-200">
+              ← Return to Home
+            </Link>
+          </div>
+        </div>
       </div>
     </main>
   );
