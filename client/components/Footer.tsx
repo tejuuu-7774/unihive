@@ -14,7 +14,13 @@ export default function Footer() {
           {/* Brand Column */}
           <div className="col-span-1 lg:col-span-2">
             <Link href="/" className="flex items-center gap-2">
-              <Image src="/logo-icon.png" alt="UniHive" width={28} height={28} />
+              <Image
+                src="/logo-icon.png"
+                alt="UniHive"
+                width={28}
+                height={28}
+                style={{ width: "auto", height: "auto" }}
+              />
               <span className="text-lg font-bold tracking-tight text-slate-900">UniHive</span>
             </Link>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-slate-500">

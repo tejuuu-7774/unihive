@@ -14,8 +14,7 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await apiRequest("/auth/login", "POST", form);
-      localStorage.setItem("token", res.data.token);
+      await apiRequest("/auth/login", "POST", form);
       router.push("/dashboard");
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : "Something went wrong");
@@ -31,7 +30,14 @@ export default function LoginPage() {
         <div className="border border-slate-200 bg-white p-12 shadow-xl shadow-slate-100/50">
           <div className="mb-10 text-center">
             <Link href="/" className="inline-flex items-center gap-2 mb-8 group">
-              <Image src="/logo-icon.png" alt="UniHive" width={28} height={28} className="group-hover:scale-110 transition-transform" />
+              <Image
+                src="/logo-icon.png"
+                alt="UniHive"
+                width={28}
+                height={28}
+                className="group-hover:scale-110 transition-transform"
+                style={{ width: "auto", height: "auto" }}
+              />
               <span className="text-base font-bold uppercase tracking-tighter">UniHive</span>
             </Link>
             <h1 className="text-3xl font-black uppercase tracking-tight">Welcome Back</h1>

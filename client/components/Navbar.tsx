@@ -9,6 +9,7 @@ export default function Navbar() {
           alt="UniHive"
           width={40}
           height={40}
+          style={{ width: "auto", height: "auto" }}
         />
         <span className="text-xl font-semibold text-purple-700">
           UniHive

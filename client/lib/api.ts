@@ -1,19 +1,19 @@
-const BASE_URL = "https://unihive-28tq.onrender.com/api";
-
 export async function apiRequest(
   endpoint: string,
   method: string = "GET",
-  body?: unknown,
-  token?: string
+  body?: unknown
 ) {
-  const res = await fetch(`${BASE_URL}${endpoint}`, {
-    method,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token && { Authorization: `Bearer ${token}` }),
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  const res = await fetch(
+    `https://unihive-28tq.onrender.com/api${endpoint}`,
+    {
+      method,
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    }
+  );
 
   const data = await res.json();
 

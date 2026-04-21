@@ -36,7 +36,14 @@ export default function Home() {
         {/* Navigation */}
         <nav className="mx-auto flex w-full max-w-[1300px] items-center justify-between px-8 py-8">
           <button onClick={() => router.push("/")} className="flex items-center gap-2 group">
-            <Image src="/logo-icon.png" alt="UniHive" width={28} height={28} className="group-hover:opacity-80 transition-opacity" />
+            <Image
+              src="/logo-icon.png"
+              alt="UniHive"
+              width={28}
+              height={28}
+              className="group-hover:opacity-80 transition-opacity"
+              style={{ width: "auto", height: "auto" }}
+            />
             <span className="text-lg font-bold tracking-tighter uppercase text-slate-900">UniHive</span>
           </button>
           <div className="flex items-center gap-8">

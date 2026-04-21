@@ -14,6 +14,15 @@ const generateToken = (id) =>
     expiresIn: "7d",
   });
 
+const setAuthCookie = (res, token) => {
+  res.cookie("token", token, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
+};
+
 exports.registerUser = asyncHandler(async (req, res) => {
   const { name, email, password, phone } = req.body;
 
@@ -41,6 +50,9 @@ exports.registerUser = asyncHandler(async (req, res) => {
     password: await bcrypt.hash(password, 10),
     phone,
   });
+  const token = generateToken(user._id);
+
+  setAuthCookie(res, token);
 
   successResponse(
     res,
@@ -52,7 +64,6 @@ exports.registerUser = asyncHandler(async (req, res) => {
       role: user.role,
       isVerified: user.isVerified,
       verificationStatus: user.verificationStatus,
-      token: generateToken(user._id),
     },
     "User registered successfully",
     201
@@ -75,6 +86,9 @@ exports.loginUser = asyncHandler(async (req, res) => {
   if (user.isBanned) {
     throw new AppError("User is banned", 403);
   }
+  const token = generateToken(user._id);
+
+  setAuthCookie(res, token);
 
   successResponse(
     res,
@@ -86,8 +100,18 @@ exports.loginUser = asyncHandler(async (req, res) => {
       role: user.role,
       isVerified: user.isVerified,
       verificationStatus: user.verificationStatus,
-      token: generateToken(user._id),
     },
     "Login successful"
   );
+});
+
+exports.logoutUser = asyncHandler(async (_req, res) => {
+  res.cookie("token", "", {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+    expires: new Date(0),
+  });
+
+  successResponse(res, null, "Logout successful");
 });
