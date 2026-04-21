@@ -1,20 +1,33 @@
 "use client";
 
-import { useState } from "react";
-import { apiRequest } from "@/lib/api";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
+import { apiRequest } from "@/lib/api";
+import { getCurrentUser } from "@/lib/auth";
 
 export default function RegisterPage() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", password: "", phone: "" });
 
+  useEffect(() => {
+    const checkUser = async () => {
+      const user = await getCurrentUser();
+      if (user) {
+        router.replace("/dashboard");
+      }
+    };
+
+    checkUser();
+  }, [router]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       await apiRequest("/auth/register", "POST", form);
+      setForm({ name: "", email: "", password: "", phone: "" });
       router.push("/dashboard");
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : "Something went wrong");
@@ -49,6 +62,7 @@ export default function RegisterPage() {
               <input
                 placeholder="E.G. JOHN DOE"
                 className="w-full border border-slate-200 p-4 text-xs font-bold uppercase tracking-widest focus:border-[#7C3AED] focus:outline-none transition-colors"
+                value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
               />
             </div>
@@ -59,6 +73,7 @@ export default function RegisterPage() {
                 placeholder="STUDENT@UNIVERSITY.EDU"
                 type="email"
                 className="w-full border border-slate-200 p-4 text-xs font-bold uppercase tracking-widest focus:border-[#7C3AED] focus:outline-none transition-colors"
+                value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
               />
             </div>
@@ -70,6 +85,7 @@ export default function RegisterPage() {
                   placeholder="••••••••"
                   type={showPassword ? "text" : "password"}
                   className="w-full border border-slate-200 p-4 pr-12 text-xs font-bold uppercase tracking-widest focus:border-[#7C3AED] focus:outline-none transition-colors"
+                  value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
                 />
                 <button 
@@ -91,6 +107,7 @@ export default function RegisterPage() {
               <input
                 placeholder="+91 9900-0000"
                 className="w-full border border-slate-200 p-4 text-xs font-bold uppercase tracking-widest focus:border-[#7C3AED] focus:outline-none transition-colors"
+                value={form.phone}
                 onChange={(e) => setForm({ ...form, phone: e.target.value })}
               />
             </div>
