@@ -35,7 +35,7 @@ const userSchema = new mongoose.Schema(
       default: "user",
     },
 
-    // 🔐 Student Verification
+    // Student Verification
     isVerified: {
       type: Boolean,
       default: false,
@@ -44,7 +44,7 @@ const userSchema = new mongoose.Schema(
     verificationStatus: {
       type: String,
       enum: ["pending", "approved", "rejected"],
-      default: "pending",
+      default: "rejected",
     },
 
     studentIdCard: {
