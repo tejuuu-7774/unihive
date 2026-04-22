@@ -1,7 +1,7 @@
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
-export async function apiRequest(endpoint: string, method = "GET", body?: unknown) {
-  const res = await fetch(`${BASE_URL}${endpoint}`, {
+export const apiRequest = async (url: string, method = "GET", body?: unknown) => {
+  const res = await fetch(`${BASE_URL}${url}`, {
     method,
     credentials: "include",
     headers: {
@@ -17,4 +17,4 @@ export async function apiRequest(endpoint: string, method = "GET", body?: unknow
   }
 
   return data;
-}
+};

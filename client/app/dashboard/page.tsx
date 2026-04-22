@@ -1,32 +1,45 @@
-export default function DashboardPage() {
-  return (
-    <div className="max-w-5xl">
-      <header className="mb-12">
-        <h1 className="text-4xl font-black uppercase tracking-tight text-slate-900">Dashboard</h1>
-        {/* Change "what's" to "what&apos;s" */}
-        <p className="text-sm text-slate-500 mt-2 font-medium">
-          Welcome back. Here is what&apos;s happening in your student economy today.
-        </p>
-      </header>
-      {/* Placeholder Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-        {[
-          { label: "Active Listings", value: "12" },
-          { label: "Total Earned", value: "$420.50" },
-          { label: "Account Status", value: "Verified" }
-        ].map((stat, i) => (
-          <div key={i} className="bg-white border border-slate-200 p-8 hover:border-[#7C3AED] transition-colors">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">{stat.label}</p>
-            <p className="text-2xl font-black text-slate-900">{stat.value}</p>
-          </div>
-        ))}
-      </div>
+"use client";
 
-      <div className="border border-slate-200 bg-white p-12 text-center border-dashed">
-        <p className="text-[11px] font-bold uppercase tracking-widest text-slate-300">
-          Role-based content and marketplace activities will populate here
-        </p>
-      </div>
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { getCurrentUser } from "@/lib/auth";
+import { getDashboardHome, normalizeRole } from "@/lib/dashboard";
+
+export default function DashboardPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    let active = true;
+
+    const routeUser = async () => {
+      const user = await getCurrentUser();
+
+      if (!active) {
+        return;
+      }
+
+      const role = normalizeRole(user?.role);
+
+      if (!user || !role) {
+        router.replace("/login");
+        return;
+      }
+
+      router.replace(getDashboardHome(role));
+    };
+
+    routeUser();
+
+    return () => {
+      active = false;
+    };
+  }, [router]);
+
+  return (
+    <div className="border border-slate-200 bg-white px-6 py-10">
+      <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-500">
+        Preparing your dashboard
+      </p>
     </div>
   );
 }

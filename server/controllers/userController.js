@@ -28,6 +28,12 @@ exports.requestVerification = asyncHandler(async (req, res) => {
     throw new AppError("User not found", 404);
   }
 
+  if (user.isBanned) {
+    throw new AppError("Banned users cannot request seller access", 403);
+  }
+  if (user.isBanned) {
+    throw new AppError("Cannot approve a banned user", 403);
+  }
   user.collegeName = collegeName;
   user.studentIdCard = uploadedCardPath || studentIdCard;
   user.verificationStatus = "pending";
@@ -210,4 +216,24 @@ exports.deleteAccount = asyncHandler(async (req, res) => {
     { deletedProducts: sellerProductIds.length },
     "Account deleted successfully"
   );
+});
+
+exports.downgradeSeller = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
+
+  if (!user) {
+    throw new AppError("User not found", 404);
+  }
+
+  if (user.role !== "seller") {
+    throw new AppError("User is not a seller", 400);
+  }
+
+  user.role = "user";
+  user.isVerified = false;
+  user.verificationStatus = "rejected"; 
+
+  await user.save();
+
+  successResponse(res, user, "Seller downgraded to user");
 });

@@ -57,7 +57,6 @@ export default function LoginPage() {
             <h1 className="text-3xl font-black uppercase">Welcome Back</h1>
           </div>
 
-          {/* ✅ KEEP autocomplete ON */}
           <form onSubmit={handleSubmit} autoComplete="on" className="space-y-5">
             
             {/* EMAIL */}

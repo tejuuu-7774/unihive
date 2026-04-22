@@ -5,6 +5,7 @@ const {
   approveSeller,
   rejectSeller,
   getProfile,
+  downgradeSeller,
   updateProfile,
   deleteAccount,
 } = require("../controllers/userController");
@@ -26,5 +27,7 @@ router.put(
 
 router.put("/approve/:id", protect, authorizeRoles("admin"), approveSeller);
 router.put("/reject/:id", protect, authorizeRoles("admin"), rejectSeller);
+
+router.put("/downgrade/:id", protect, authorizeRoles("admin"), downgradeSeller);
 
 module.exports = router;
