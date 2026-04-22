@@ -10,8 +10,14 @@ import {
   getDashboardHome,
   isDashboardPathAllowed,
   normalizeRole,
+  type DashboardRole,
 } from "@/lib/dashboard";
-import type { DashboardUser } from "@/lib/dashboard";
+
+type SafeUser = {
+  name?: string;
+  email?: string;
+  role: DashboardRole;
+};
 
 export default function DashboardLayout({
   children,
@@ -20,8 +26,9 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<DashboardUser | null>(null);
+  const [user, setUser] = useState<SafeUser | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -29,9 +36,7 @@ export default function DashboardLayout({
     const checkAuth = async () => {
       const currentUser = await getCurrentUser();
 
-      if (!active) {
-        return;
-      }
+      if (!active) return;
 
       const role = normalizeRole(currentUser?.role);
 
@@ -45,11 +50,15 @@ export default function DashboardLayout({
         return;
       }
 
-      setUser({ ...currentUser, role });
+      setUser({
+        name: currentUser.name,
+        email: currentUser.email,
+        role,
+      });
+
       setLoading(false);
     };
 
-    setLoading(true);
     checkAuth();
 
     return () => {
@@ -57,6 +66,7 @@ export default function DashboardLayout({
     };
   }, [pathname, router]);
 
+  // Loading screen
   if (loading || !user) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-white text-slate-900">
@@ -65,6 +75,7 @@ export default function DashboardLayout({
           alt="UniHive"
           width={36}
           height={36}
+          style={{ width: "auto", height: "auto" }} // ✅ fix warning
           className="opacity-20"
         />
         <p className="mt-4 text-[10px] font-bold uppercase tracking-[0.28em] text-slate-400">
@@ -74,10 +85,12 @@ export default function DashboardLayout({
     );
   }
 
+  // FINAL RENDER
   return (
     <div className="min-h-screen bg-white text-slate-900">
       <div className="flex min-h-screen">
         <Sidebar role={user.role} pathname={pathname} />
+
         <div className="flex min-h-screen min-w-0 flex-1 flex-col">
           <Topbar
             userName={user.name}
@@ -85,6 +98,7 @@ export default function DashboardLayout({
             role={user.role}
             pathname={pathname}
           />
+
           <main className="flex-1 bg-white px-6 py-6 md:px-10 md:py-8">
             {children}
           </main>
