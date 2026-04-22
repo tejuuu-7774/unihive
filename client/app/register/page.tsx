@@ -9,8 +9,13 @@ import { getCurrentUser } from "@/lib/auth";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [showPassword, setShowPassword] = useState(false);
-  const [form, setForm] = useState({ name: "", email: "", password: "", phone: "" });
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    phone: "",
+  });
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const checkUser = async () => {
@@ -19,111 +24,109 @@ export default function RegisterPage() {
         router.replace("/dashboard");
       }
     };
-
     checkUser();
   }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
+
     try {
       await apiRequest("/auth/register", "POST", form);
       setForm({ name: "", email: "", password: "", phone: "" });
       router.push("/dashboard");
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Something went wrong");
+      setError(err instanceof Error ? err.message : "Something went wrong");
     }
   };
-  
-  return (
-    <main className="relative flex items-center justify-center min-h-screen bg-white text-slate-900 selection:bg-[#7C3AED] selection:text-white">
-      <div className="absolute inset-0 z-0 opacity-[0.02] pointer-events-none" 
-           style={{ backgroundImage: `url('/logo-icon.png')`, backgroundSize: "180px", backgroundPosition: "center" }} />
 
-      <div className="relative z-10 w-full max-w-[460px] px-6 py-12">
+  return (
+    <main className="relative flex items-center justify-center min-h-screen bg-white text-slate-900">
+      <div
+        className="absolute inset-0 opacity-[0.02]"
+        style={{
+          backgroundImage: `url('/logo-icon.png')`,
+          backgroundSize: "180px",
+        }}
+      />
+
+      <div className="relative w-full max-w-[460px] px-6 py-12">
         <div className="border border-slate-200 bg-white p-12 shadow-xl shadow-slate-100/50">
+
+          {/* Header */}
           <div className="mb-10 text-center">
-            <Link href="/" className="inline-flex items-center gap-2 mb-8 group">
-              <Image
-                src="/logo-icon.png"
-                alt="UniHive"
-                width={28}
-                height={28}
-                className="group-hover:scale-110 transition-transform"
-                style={{ width: "auto", height: "auto" }}
-              />
-              <span className="text-base font-bold uppercase tracking-tighter">UniHive</span>
+            <Link href="/" className="inline-flex items-center gap-2 mb-8">
+              <Image src="/logo-icon.png" alt="UniHive" width={28} height={28} />
+              <span className="text-base font-bold uppercase">UniHive</span>
             </Link>
-            <h1 className="text-3xl font-black uppercase tracking-tight">Create Account</h1>
+            <h1 className="text-3xl font-black uppercase">Create Account</h1>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Full Name</label>
-              <input
-                placeholder="E.G. JOHN DOE"
-                className="w-full border border-slate-200 p-4 text-xs font-bold uppercase tracking-widest focus:border-[#7C3AED] focus:outline-none transition-colors"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-              />
-            </div>
+          <form onSubmit={handleSubmit} autoComplete="off" className="space-y-5">
 
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Email Address</label>
-              <input
-                placeholder="STUDENT@UNIVERSITY.EDU"
-                autoComplete="off"
-                type="email"
-                className="w-full border border-slate-200 p-4 text-xs font-bold uppercase tracking-widest focus:border-[#7C3AED] focus:outline-none transition-colors"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-              />
-            </div>
+            <input
+              name="name"
+              autoComplete="off"
+              value={form.name}
+              onChange={(e) =>
+                setForm({ ...form, name: e.target.value })
+              }
+              placeholder="Full Name"
+              className="w-full border p-4 text-xs font-bold"
+            />
 
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Security Password</label>
-              <div className="relative">
-                <input
-                  placeholder="••••••••"
-                  autoComplete="new-password"
-                  type={showPassword ? "text" : "password"}
-                  className="w-full border border-slate-200 p-4 pr-12 text-xs font-bold uppercase tracking-widest focus:border-[#7C3AED] focus:outline-none transition-colors"
-                  value={form.password}
-                  onChange={(e) => setForm({ ...form, password: e.target.value })}
-                />
-                <button 
-                  type="button" 
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-900 transition-colors"
-                >
-                  {showPassword ? (
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                  ) : (
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                  )}
-                </button>
-              </div>
-            </div>
+            <input
+              name="email"
+              autoComplete="off"
+              value={form.email}
+              onChange={(e) =>
+                setForm({ ...form, email: e.target.value })
+              }
+              placeholder="Email"
+              className="w-full border p-4 text-xs font-bold"
+            />
 
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Phone Number</label>
-              <input
-                placeholder="+91 9900-0000"
-                className="w-full border border-slate-200 p-4 text-xs font-bold uppercase tracking-widest focus:border-[#7C3AED] focus:outline-none transition-colors"
-                value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
-              />
-            </div>
+            <input
+              name="password"
+              autoComplete="new-password"
+              type="password"
+              value={form.password}
+              onChange={(e) =>
+                setForm({ ...form, password: e.target.value })
+              }
+              placeholder="Password"
+              className="w-full border p-4 text-xs font-bold"
+            />
 
-            <div className="pt-4">
-              <button type="submit" className="w-full bg-slate-900 text-white py-5 text-[11px] font-bold uppercase tracking-[0.3em] hover:bg-[#7C3AED] transition-all">
-                Register
-              </button>
-            </div>
+            <input
+              name="phone"
+              autoComplete="off"
+              value={form.phone}
+              onChange={(e) =>
+                setForm({ ...form, phone: e.target.value })
+              }
+              placeholder="Phone"
+              className="w-full border p-4 text-xs font-bold"
+            />
+
+            {/* ERROR */}
+            {error && (
+              <p className="text-xs font-semibold text-[#7C3AED] bg-purple-50 px-3 py-2 border border-purple-200">
+                {error}
+              </p>
+            )}
+
+            <button className="w-full bg-slate-900 text-white py-5 text-[11px] font-bold uppercase hover:bg-[#7C3AED]">
+              Register
+            </button>
           </form>
 
-          <div className="mt-10 flex flex-col items-center gap-4 border-t border-slate-100 pt-8">
-            <Link href="/login" className="text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-[#7C3AED]">Sign In</Link>
-            <Link href="/" className="text-[10px] font-bold uppercase tracking-widest text-slate-300 hover:text-slate-900 transition-colors underline underline-offset-4 decoration-slate-200">
+          <div className="mt-10 text-center space-y-3">
+            <Link href="/login" className="text-xs text-slate-400 hover:text-[#7C3AED]">
+              Sign In
+            </Link>
+            <br />
+            <Link href="/" className="text-xs text-slate-300 hover:text-slate-900">
               ← Return to Home
             </Link>
           </div>
