@@ -32,7 +32,7 @@ export default function Sidebar({ role, pathname }: SidebarProps) {
         <nav className="flex-1 px-4 py-6">
           <ul className="space-y-1">
             {items.map((item) => {
-              const isActive = pathname === item.href;
+              const isActive = pathname.startsWith(item.href);
 
               return (
                 <li key={item.href}>
