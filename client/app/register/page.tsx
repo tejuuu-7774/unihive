@@ -71,6 +71,7 @@ export default function RegisterPage() {
               <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Email Address</label>
               <input
                 placeholder="STUDENT@UNIVERSITY.EDU"
+                autoComplete="off"
                 type="email"
                 className="w-full border border-slate-200 p-4 text-xs font-bold uppercase tracking-widest focus:border-[#7C3AED] focus:outline-none transition-colors"
                 value={form.email}
@@ -83,6 +84,7 @@ export default function RegisterPage() {
               <div className="relative">
                 <input
                   placeholder="••••••••"
+                  autoComplete="new-password"
                   type={showPassword ? "text" : "password"}
                   className="w-full border border-slate-200 p-4 pr-12 text-xs font-bold uppercase tracking-widest focus:border-[#7C3AED] focus:outline-none transition-colors"
                   value={form.password}

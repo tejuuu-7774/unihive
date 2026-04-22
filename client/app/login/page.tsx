@@ -56,12 +56,13 @@ export default function LoginPage() {
             <h1 className="text-3xl font-black uppercase tracking-tight">Welcome Back</h1>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} autoComplete="off" className="space-y-5">
             <div className="space-y-1">
               <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Email Address</label>
               <input
                 placeholder="STUDENT@UNIVERSITY.EDU"
                 type="email"
+                autoComplete="off"
                 className="w-full border border-slate-200 p-4 text-xs font-bold uppercase tracking-widest focus:border-[#7C3AED] focus:outline-none transition-colors"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
@@ -73,6 +74,7 @@ export default function LoginPage() {
               <div className="relative">
                 <input
                   placeholder="••••••••"
+                  autoComplete="new-password"
                   type={showPassword ? "text" : "password"}
                   className="w-full border border-slate-200 p-4 pr-12 text-xs font-bold uppercase tracking-widest focus:border-[#7C3AED] focus:outline-none transition-colors"
                   value={form.password}
