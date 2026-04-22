@@ -17,10 +17,9 @@ export default function LoginPage() {
   useEffect(() => {
     const checkUser = async () => {
       const user = await getCurrentUser();
-      if (user) {
-        router.replace("/dashboard");
-      }
+      if (user) router.replace("/dashboard");
     };
+
     checkUser();
   }, [router]);
 
@@ -49,8 +48,7 @@ export default function LoginPage() {
 
       <div className="relative w-full max-w-[460px] px-6 py-12">
         <div className="border border-slate-200 bg-white p-12 shadow-xl shadow-slate-100/50">
-          
-          {/* Header */}
+
           <div className="mb-10 text-center">
             <Link href="/" className="inline-flex items-center gap-2 mb-8">
               <Image src="/logo-icon.png" alt="UniHive" width={28} height={28} />
@@ -59,16 +57,17 @@ export default function LoginPage() {
             <h1 className="text-3xl font-black uppercase">Welcome Back</h1>
           </div>
 
-          <form onSubmit={handleSubmit} autoComplete="off" className="space-y-5">
+          {/* ✅ KEEP autocomplete ON */}
+          <form onSubmit={handleSubmit} autoComplete="on" className="space-y-5">
             
-            {/* Email */}
+            {/* EMAIL */}
             <div>
               <label className="text-[10px] font-bold uppercase text-slate-400">
                 Email Address
               </label>
               <input
                 name="email"
-                autoComplete="off"
+                autoComplete="email"
                 type="email"
                 value={form.email}
                 onChange={(e) =>
@@ -78,7 +77,7 @@ export default function LoginPage() {
               />
             </div>
 
-            {/* Password */}
+            {/* PASSWORD */}
             <div>
               <label className="text-[10px] font-bold uppercase text-slate-400">
                 Password
@@ -86,7 +85,7 @@ export default function LoginPage() {
               <div className="relative">
                 <input
                   name="password"
-                  autoComplete="new-password"
+                  autoComplete="current-password"
                   type={showPassword ? "text" : "password"}
                   value={form.password}
                   onChange={(e) =>
@@ -111,13 +110,11 @@ export default function LoginPage() {
               </p>
             )}
 
-            {/* Button */}
             <button className="w-full bg-slate-900 text-white py-5 text-[11px] font-bold uppercase hover:bg-[#7C3AED]">
               Sign In
             </button>
           </form>
 
-          {/* Footer */}
           <div className="mt-10 text-center space-y-3">
             <Link href="/register" className="text-xs text-slate-400 hover:text-[#7C3AED]">
               Create Account

@@ -9,21 +9,22 @@ import { getCurrentUser } from "@/lib/auth";
 
 export default function RegisterPage() {
   const router = useRouter();
+
   const [form, setForm] = useState({
     name: "",
     email: "",
     password: "",
     phone: "",
   });
+
   const [error, setError] = useState("");
 
   useEffect(() => {
     const checkUser = async () => {
       const user = await getCurrentUser();
-      if (user) {
-        router.replace("/dashboard");
-      }
+      if (user) router.replace("/dashboard");
     };
+
     checkUser();
   }, [router]);
 
@@ -53,7 +54,6 @@ export default function RegisterPage() {
       <div className="relative w-full max-w-[460px] px-6 py-12">
         <div className="border border-slate-200 bg-white p-12 shadow-xl shadow-slate-100/50">
 
-          {/* Header */}
           <div className="mb-10 text-center">
             <Link href="/" className="inline-flex items-center gap-2 mb-8">
               <Image src="/logo-icon.png" alt="UniHive" width={28} height={28} />
@@ -62,11 +62,11 @@ export default function RegisterPage() {
             <h1 className="text-3xl font-black uppercase">Create Account</h1>
           </div>
 
-          <form onSubmit={handleSubmit} autoComplete="off" className="space-y-5">
+          <form onSubmit={handleSubmit} autoComplete="on" className="space-y-5">
 
             <input
               name="name"
-              autoComplete="off"
+              autoComplete="name"
               value={form.name}
               onChange={(e) =>
                 setForm({ ...form, name: e.target.value })
@@ -77,7 +77,7 @@ export default function RegisterPage() {
 
             <input
               name="email"
-              autoComplete="off"
+              autoComplete="email"
               value={form.email}
               onChange={(e) =>
                 setForm({ ...form, email: e.target.value })
@@ -100,7 +100,7 @@ export default function RegisterPage() {
 
             <input
               name="phone"
-              autoComplete="off"
+              autoComplete="tel"
               value={form.phone}
               onChange={(e) =>
                 setForm({ ...form, phone: e.target.value })
@@ -109,7 +109,6 @@ export default function RegisterPage() {
               className="w-full border p-4 text-xs font-bold"
             />
 
-            {/* ERROR */}
             {error && (
               <p className="text-xs font-semibold text-[#7C3AED] bg-purple-50 px-3 py-2 border border-purple-200">
                 {error}
