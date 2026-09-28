@@ -43,8 +43,8 @@ const userSchema = new mongoose.Schema(
 
     verificationStatus: {
       type: String,
-      enum: ["pending", "approved", "rejected"],
-      default: "rejected",
+      enum: ["not_submitted", "pending", "approved", "rejected"],
+      default: "not_submitted",
     },
 
     studentIdCard: {
@@ -66,6 +66,8 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    isDeleted: { type: Boolean, default: false },
+    deletedAt: Date,
 
     banReason: {
       type: String,

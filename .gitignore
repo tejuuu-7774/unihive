@@ -10,3 +10,6 @@ build
 coverage
 .DS_Store
 uploads
+!.env.example
+!client/.env.example
+!server/.env.example

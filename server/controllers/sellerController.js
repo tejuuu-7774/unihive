@@ -9,7 +9,7 @@ exports.getSellerAnalytics = asyncHandler(async (req, res) => {
     Order.find({ seller: req.user._id }).select("status totalPrice quantity"),
   ]);
 
-  res.json({
+  successResponse(res, {
     totalProducts: products.length,
     approvedProducts: products.filter((product) => product.isApproved).length,
     pendingProducts: products.filter((product) => !product.isApproved).length,
@@ -29,5 +29,5 @@ exports.getSellerAnalytics = asyncHandler(async (req, res) => {
     grossRevenue: orders
       .filter((order) => ["accepted", "shipped", "delivered"].includes(order.status))
       .reduce((sum, order) => sum + order.totalPrice, 0),
-  });
+  }, "Seller analytics fetched");
 });

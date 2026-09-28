@@ -58,6 +58,24 @@ const orderSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    statusHistory: [
+      {
+        status: {
+          type: String,
+          enum: [
+            "requested",
+            "accepted",
+            "rejected",
+            "shipped",
+            "delivered",
+            "cancelled",
+          ],
+          required: true,
+        },
+        changedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+        changedAt: { type: Date, default: Date.now },
+      },
+    ],
   },
   { timestamps: true }
 );

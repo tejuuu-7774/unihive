@@ -15,10 +15,11 @@ const generateToken = (id) =>
   });
 
 const setAuthCookie = (res, token) => {
+  const isProduction = process.env.NODE_ENV === "production";
   res.cookie("token", token, {
     httpOnly: true,
-    secure: true,
-    sameSite: "none",
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 };
@@ -38,7 +39,11 @@ exports.registerUser = asyncHandler(async (req, res) => {
     throw new AppError("Password must be at least 6 characters long", 400);
   }
 
-  const userExists = await User.findOne({ email });
+  const normalizedEmail = email.trim().toLowerCase();
+  if (!/^\d{10,15}$/.test(phone.toString().trim())) {
+    throw new AppError("Phone number must contain 10 to 15 digits", 400);
+  }
+  const userExists = await User.findOne({ email: normalizedEmail, isDeleted: false });
 
   if (userExists) {
     throw new AppError("User already exists", 400);
@@ -46,9 +51,9 @@ exports.registerUser = asyncHandler(async (req, res) => {
 
   const user = await User.create({
     name,
-    email,
+    email: normalizedEmail,
     password: await bcrypt.hash(password, 10),
-    phone,
+    phone: phone.toString().trim(),
   });
   const token = generateToken(user._id);
 
@@ -77,7 +82,7 @@ exports.loginUser = asyncHandler(async (req, res) => {
     throw new AppError("Email and password are required", 400);
   }
 
-  const user = await User.findOne({ email });
+  const user = await User.findOne({ email: email.trim().toLowerCase(), isDeleted: false });
 
   if (!user || !(await bcrypt.compare(password, user.password))) {
     throw new AppError("Invalid credentials", 401);
@@ -106,10 +111,11 @@ exports.loginUser = asyncHandler(async (req, res) => {
 });
 
 exports.logoutUser = asyncHandler(async (_req, res) => {
+  const isProduction = process.env.NODE_ENV === "production";
   res.cookie("token", "", {
     httpOnly: true,
-    secure: true,
-    sameSite: "none",
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
     expires: new Date(0),
   });
 

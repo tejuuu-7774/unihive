@@ -10,12 +10,12 @@ const AppError = require("../utils/AppError");
 const { successResponse } = require("../utils/response");
 
 exports.requestVerification = asyncHandler(async (req, res) => {
-  const { collegeName, studentIdCard } = req.body;
+  const { collegeName } = req.body;
   const uploadedCardPath = req.file
     ? `/uploads/student-ids/${path.basename(req.file.path)}`
     : undefined;
 
-  if (!collegeName || (!studentIdCard && !uploadedCardPath)) {
+  if (!collegeName || !uploadedCardPath) {
     throw new AppError(
       "College name and student ID card are required",
       400
@@ -31,11 +31,8 @@ exports.requestVerification = asyncHandler(async (req, res) => {
   if (user.isBanned) {
     throw new AppError("Banned users cannot request seller access", 403);
   }
-  if (user.isBanned) {
-    throw new AppError("Cannot approve a banned user", 403);
-  }
   user.collegeName = collegeName;
-  user.studentIdCard = uploadedCardPath || studentIdCard;
+  user.studentIdCard = uploadedCardPath;
   user.verificationStatus = "pending";
   user.isVerified = false;
 
@@ -64,6 +61,12 @@ exports.approveSeller = asyncHandler(async (req, res) => {
 
   if (!user) {
     throw new AppError("User not found", 404);
+  }
+  if (user.isBanned) {
+    throw new AppError("Cannot approve a banned user", 403);
+  }
+  if (!user.studentIdCard || user.verificationStatus !== "pending") {
+    throw new AppError("User does not have a pending verification request", 400);
   }
 
   user.verificationStatus = "approved";
@@ -196,20 +199,18 @@ exports.deleteAccount = asyncHandler(async (req, res) => {
 
   const sellerProducts = await Product.find({ seller: user._id }).select("_id");
   const sellerProductIds = sellerProducts.map((product) => product._id);
-
-  await Order.deleteMany({
-    $or: [
-      { buyer: user._id },
-      { seller: user._id },
-      { product: { $in: sellerProductIds } },
-    ],
-  });
-
-  await Review.deleteMany({
-    $or: [{ user: user._id }, { product: { $in: sellerProductIds } }],
-  });
-  await Product.deleteMany({ seller: user._id });
-  await user.deleteOne();
+  await Product.updateMany({ seller: user._id }, { isArchived: true, isApproved: false });
+  user.name = "Deleted user";
+  user.email = `deleted-${user._id}@unihive.invalid`;
+  user.phone = "0000000000";
+  user.whatsappNumber = undefined;
+  user.studentIdCard = undefined;
+  user.avatar = undefined;
+  user.bio = undefined;
+  user.isDeleted = true;
+  user.deletedAt = new Date();
+  user.isBanned = true;
+  await user.save();
 
   successResponse(
     res,

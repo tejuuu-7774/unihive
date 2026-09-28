@@ -12,7 +12,12 @@ const storage = multer.diskStorage({
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    const extension = path.extname(file.originalname) || ".jpg";
+    const extensionByType = {
+      "image/jpeg": ".jpg",
+      "image/png": ".png",
+      "image/webp": ".webp",
+    };
+    const extension = extensionByType[file.mimetype] || ".jpg";
     cb(null, `${req.user._id}-${Date.now()}${extension}`);
   },
 });

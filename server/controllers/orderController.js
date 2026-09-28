@@ -4,6 +4,7 @@ const asyncHandler = require("../utils/asyncHandler");
 const AppError = require("../utils/AppError");
 const { isValidObjectId } = require("../utils/validation");
 const { successResponse } = require("../utils/response");
+const { canTransitionOrder } = require("../utils/orderTransitions");
 
 exports.createOrder = asyncHandler(async (req, res) => {
   const {
@@ -21,7 +22,7 @@ exports.createOrder = asyncHandler(async (req, res) => {
     throw new AppError("Quantity must be a whole number greater than 0", 400);
   }
 
-  const product = await Product.findById(productId).populate("seller");
+  const product = await Product.findById(productId).populate("seller", "name phone whatsappNumber");
 
   if (!product) {
     throw new AppError("Product not found", 404);
@@ -55,9 +56,12 @@ exports.createOrder = asyncHandler(async (req, res) => {
     product: product._id,
     quantity: Number(quantity),
     totalPrice: product.price * Number(quantity),
-    sellerContact: product.seller.phone,
+    sellerContact: product.seller.whatsappNumber || product.seller.phone,
     chatType,
     paymentType,
+    statusHistory: [
+      { status: "requested", changedBy: req.user._id, changedAt: new Date() },
+    ],
   });
 
   const populatedOrder = await Order.findById(order._id)
@@ -66,7 +70,10 @@ exports.createOrder = asyncHandler(async (req, res) => {
     .populate("seller", "name phone")
     .populate("buyer", "name");
 
-  successResponse(res, populatedOrder, "Order placed successfully", 201);
+  const safeOrder = populatedOrder.toObject();
+  delete safeOrder.sellerContact;
+  if (safeOrder.seller) delete safeOrder.seller.phone;
+  successResponse(res, safeOrder, "Order placed successfully", 201);
 });
 
 exports.updateOrderStatus = asyncHandler(async (req, res) => {
@@ -93,46 +100,43 @@ exports.updateOrderStatus = asyncHandler(async (req, res) => {
     throw new AppError("Not authorized", 403);
   }
 
-  const validTransitions = {
-    requested: ["accepted", "rejected"],
-    accepted: ["shipped"],
-    shipped: ["delivered"],
-  };
-
-  if (
-    !validTransitions[order.status] ||
-    !validTransitions[order.status].includes(status)
-  ) {
+  if (!canTransitionOrder(order.status, status)) {
     throw new AppError(
       `Invalid status transition from ${order.status} to ${status}`,
       400
     );
   }
 
+  const update = {
+    $set: { status, ...(paymentStatus ? { paymentStatus } : {}) },
+    $push: {
+      statusHistory: { status, changedBy: req.user._id, changedAt: new Date() },
+    },
+  };
+  const transitionedOrder = await Order.findOneAndUpdate(
+    { _id: order._id, status: order.status },
+    update,
+    { new: true, runValidators: true }
+  );
+  if (!transitionedOrder) {
+    throw new AppError("Order status changed. Refresh and try again", 409);
+  }
+
   if (status === "accepted") {
-    const product = await Product.findById(order.product);
-
+    const product = await Product.findOneAndUpdate(
+      { _id: order.product, stock: { $gte: order.quantity }, isApproved: true },
+      { $inc: { stock: -order.quantity } },
+      { new: true }
+    );
     if (!product) {
-      throw new AppError("Product not found", 404);
-    }
-
-    if (product.stock < order.quantity) {
+      await Order.updateOne(
+        { _id: order._id, status: "accepted" },
+        { $set: { status: "requested" }, $pop: { statusHistory: 1 } }
+      );
       throw new AppError("Not enough stock to accept this order", 400);
     }
-
-    product.stock -= order.quantity;
-    await product.save();
   }
-
-  order.status = status;
-
-  if (paymentStatus) {
-    order.paymentStatus = paymentStatus;
-  }
-
-  await order.save();
-
-  successResponse(res, order, "Order status updated");
+  successResponse(res, transitionedOrder, "Order status updated");
 });
 
 exports.cancelOrder = asyncHandler(async (req, res) => {
@@ -154,10 +158,16 @@ exports.cancelOrder = asyncHandler(async (req, res) => {
     throw new AppError("Cannot cancel after seller accepted", 400);
   }
 
-  order.status = "cancelled";
-  await order.save();
-
-  successResponse(res, order, "Order cancelled");
+  const cancelledOrder = await Order.findOneAndUpdate(
+    { _id: order._id, buyer: req.user._id, status: "requested" },
+    {
+      $set: { status: "cancelled" },
+      $push: { statusHistory: { status: "cancelled", changedBy: req.user._id, changedAt: new Date() } },
+    },
+    { new: true, runValidators: true }
+  );
+  if (!cancelledOrder) throw new AppError("Order can no longer be cancelled", 409);
+  successResponse(res, cancelledOrder, "Order cancelled");
 });
 
 exports.getMyOrders = asyncHandler(async (req, res) => {
@@ -167,7 +177,15 @@ exports.getMyOrders = asyncHandler(async (req, res) => {
     .populate("product", "title price images category")
     .populate("seller", "name phone");
 
-  successResponse(res, orders, "Orders fetched");
+  const safeOrders = orders.map((order) => {
+    const value = order.toObject();
+    if (!["accepted", "shipped", "delivered"].includes(value.status)) {
+      delete value.sellerContact;
+      if (value.seller) delete value.seller.phone;
+    }
+    return value;
+  });
+  successResponse(res, safeOrders, "Orders fetched");
 });
 
 exports.getSellerOrders = asyncHandler(async (req, res) => {

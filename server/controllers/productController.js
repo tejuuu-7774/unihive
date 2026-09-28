@@ -6,6 +6,8 @@ const AppError = require("../utils/AppError");
 const { isValidObjectId, isProvided, parseSort } = require("../utils/validation");
 const { successResponse } = require("../utils/response");
 
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 exports.createProduct = asyncHandler(async (req, res) => {
   const {
     title,
@@ -61,7 +63,7 @@ exports.getProducts = asyncHandler(async (req, res) => {
     limit = 10,
   } = req.query;
 
-  const query = { isApproved: true };
+  const query = { isApproved: true, isArchived: false };
 
   if (category) query.category = category;
   if (productType) query.productType = productType;
@@ -72,21 +74,24 @@ exports.getProducts = asyncHandler(async (req, res) => {
   }
 
   if (search) {
+    const safeSearch = escapeRegex(search.toString().slice(0, 100));
     query.$or = [
-      { title: { $regex: search, $options: "i" } },
-      { description: { $regex: search, $options: "i" } },
-      { category: { $regex: search, $options: "i" } },
+      { title: { $regex: safeSearch, $options: "i" } },
+      { description: { $regex: safeSearch, $options: "i" } },
+      { category: { $regex: safeSearch, $options: "i" } },
     ];
   }
 
   if (minPrice || maxPrice) {
     query.price = {};
-    if (minPrice) query.price.$gte = Number(minPrice);
-    if (maxPrice) query.price.$lte = Number(maxPrice);
+    const minimum = Number(minPrice);
+    const maximum = Number(maxPrice);
+    if (minPrice && Number.isFinite(minimum)) query.price.$gte = minimum;
+    if (maxPrice && Number.isFinite(maximum)) query.price.$lte = maximum;
   }
 
-  const pageNumber = Number(page);
-  const pageSize = Number(limit);
+  const pageNumber = Math.max(1, Number(page) || 1);
+  const pageSize = Math.min(50, Math.max(1, Number(limit) || 10));
   const skip = (pageNumber - 1) * pageSize;
 
   const total = await Product.countDocuments(query);
@@ -127,9 +132,9 @@ exports.getProductById = asyncHandler(async (req, res) => {
     throw new AppError("Invalid product id", 400);
   }
 
-  const product = await Product.findById(req.params.id)
+  const product = await Product.findOne({ _id: req.params.id, isApproved: true, isArchived: false })
     .select("-__v")
-    .populate("seller", "name collegeName phone");
+    .populate("seller", "name collegeName");
 
   if (!product) {
     throw new AppError("Product not found", 404);
@@ -139,11 +144,15 @@ exports.getProductById = asyncHandler(async (req, res) => {
     .sort({ createdAt: -1 })
     .populate("user", "name");
 
-  successResponse(res, product, "Product fetched");
+  successResponse(
+    res,
+    { ...product.toObject(), reviews },
+    "Product fetched"
+  );
 });
 
 exports.getMyProducts = asyncHandler(async (req, res) => {
-  const products = await Product.find({ seller: req.user._id })
+  const products = await Product.find({ seller: req.user._id, isArchived: false })
     .sort({ createdAt: -1 })
     .select("-__v");
 
@@ -232,9 +241,11 @@ exports.deleteProduct = asyncHandler(async (req, res) => {
     throw new AppError("Not authorized", 403);
   }
 
-  await Order.deleteMany({ product: product._id });
-  await Review.deleteMany({ product: product._id });
-  await product.deleteOne();
+  product.isArchived = true;
+  product.isApproved = false;
+  product.moderationStatus = "rejected";
+  product.moderationNote = "Archived by seller";
+  await product.save();
 
   successResponse(res, null, "Product deleted successfully");
 });

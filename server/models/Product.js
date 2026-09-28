@@ -70,6 +70,7 @@ const productSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    isArchived: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

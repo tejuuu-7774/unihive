@@ -26,7 +26,7 @@ exports.protect = async (req, res, next) => {
 
     const user = await User.findById(decoded.id).select("-password");
 
-    if (!user) {
+    if (!user || user.isDeleted) {
       return res.status(401).json({
         success: false,
         message: "User not found",

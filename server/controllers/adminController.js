@@ -2,6 +2,7 @@ const User = require("../models/User");
 const Product = require("../models/Product");
 const Order = require("../models/Order");
 const Review = require("../models/Review");
+const path = require("path");
 const asyncHandler = require("../utils/asyncHandler");
 const AppError = require("../utils/AppError");
 const { isValidObjectId, isProvided } = require("../utils/validation");
@@ -24,7 +25,7 @@ const sanitizeUser = (user) => ({
 });
 
 exports.getAllUsers = asyncHandler(async (req, res) => {
-  const users = await User.find().select("-password").sort({ createdAt: -1 });
+  const users = await User.find({ isDeleted: false }).select("-password").sort({ createdAt: -1 });
   successResponse(res, users, "Users fetched");
 });
 
@@ -37,6 +38,16 @@ exports.getVerificationRequests = asyncHandler(async (req, res) => {
     .sort({ createdAt: -1 });
 
   successResponse(res, users, "Verification requests fetched");
+});
+
+exports.getVerificationDocument = asyncHandler(async (req, res) => {
+  if (!isValidObjectId(req.params.id)) throw new AppError("Invalid user id", 400);
+  const user = await User.findById(req.params.id).select("studentIdCard");
+  if (!user?.studentIdCard?.startsWith("/uploads/student-ids/")) {
+    throw new AppError("Verification document not found", 404);
+  }
+  const filename = path.basename(user.studentIdCard);
+  res.sendFile(path.join(__dirname, "..", "uploads", "student-ids", filename));
 });
 
 exports.banUser = asyncHandler(async (req, res) => {
@@ -91,7 +102,7 @@ exports.unbanUser = asyncHandler(async (req, res) => {
 });
 
 exports.getAllProducts = asyncHandler(async (req, res) => {
-  const products = await Product.find()
+  const products = await Product.find({ isArchived: false })
     .sort({ createdAt: -1 })
     .select("-__v")
     .populate("seller", "name email phone role isVerified");
@@ -153,19 +164,18 @@ exports.deleteUserByAdmin = asyncHandler(async (req, res) => {
   const sellerProducts = await Product.find({ seller: user._id }).select("_id");
   const sellerProductIds = sellerProducts.map((product) => product._id);
 
-  await Order.deleteMany({
-    $or: [
-      { buyer: user._id },
-      { seller: user._id },
-      { product: { $in: sellerProductIds } },
-    ],
-  });
-
-  await Review.deleteMany({
-    $or: [{ user: user._id }, { product: { $in: sellerProductIds } }],
-  });
-  await Product.deleteMany({ seller: user._id });
-  await user.deleteOne();
+  await Product.updateMany({ seller: user._id }, { isArchived: true, isApproved: false });
+  user.name = "Deleted user";
+  user.email = `deleted-${user._id}@unihive.invalid`;
+  user.phone = "0000000000";
+  user.whatsappNumber = undefined;
+  user.studentIdCard = undefined;
+  user.avatar = undefined;
+  user.bio = undefined;
+  user.isDeleted = true;
+  user.deletedAt = new Date();
+  user.isBanned = true;
+  await user.save();
 
   successResponse(res, null, "User deleted successfully");
 });

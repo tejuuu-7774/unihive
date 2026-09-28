@@ -3,7 +3,6 @@ const dotenv = require("dotenv");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const morgan = require("morgan");
-const path = require("path");
 
 const connectDB = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
@@ -13,7 +12,9 @@ const productRoutes = require("./routes/productRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const sellerRoutes = require("./routes/sellerRoutes");
+const reportRoutes = require("./routes/reportRoutes");
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
+const { securityHeaders, authRateLimit } = require("./middleware/securityMiddleware");
 
 dotenv.config();
 connectDB();
@@ -26,6 +27,7 @@ const allowedOrigins = [
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(securityHeaders);
 app.use(
   cors({
     origin(origin, callback) {
@@ -38,6 +40,14 @@ app.use(
     credentials: true,
   })
 );
+app.use((req, res, next) => {
+  if (["GET", "HEAD", "OPTIONS"].includes(req.method)) return next();
+  const origin = req.get("origin");
+  if (origin && !allowedOrigins.includes(origin)) {
+    return res.status(403).json({ success: false, message: "Untrusted request origin" });
+  }
+  next();
+});
 app.use(cookieParser());
 app.use(morgan("dev"));
 
@@ -45,12 +55,7 @@ app.get("/", (req, res) => {
   res.send("UniHive API is running...");
 });
 
-app.use(
-  "/uploads",
-  express.static(path.join(__dirname, "uploads"))
-);
-
-app.use("/api/auth", authRoutes);
+app.use("/api/auth", authRateLimit, authRoutes);
 if (process.env.NODE_ENV !== "production") {
   app.use("/api/test", testRoutes);
 }
@@ -59,6 +64,7 @@ app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/seller", sellerRoutes);
+app.use("/api/reports", reportRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

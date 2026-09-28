@@ -3,6 +3,7 @@ const assert = require("node:assert/strict");
 
 const { isValidObjectId, isProvided, parseSort } = require("../utils/validation");
 const { authorizeRoles, isSeller } = require("../middleware/authMiddleware");
+const { canTransitionOrder } = require("../utils/orderTransitions");
 
 test("validation helpers work for ids and provided values", () => {
   assert.equal(isValidObjectId("507f1f77bcf86cd799439011"), true);
@@ -65,4 +66,11 @@ test("isSeller blocks non-seller users", () => {
     res.payload.message,
     "Only verified sellers can perform this action"
   );
+});
+
+test("order transitions enforce the marketplace lifecycle", () => {
+  assert.equal(canTransitionOrder("requested", "accepted"), true);
+  assert.equal(canTransitionOrder("requested", "shipped"), false);
+  assert.equal(canTransitionOrder("accepted", "shipped"), true);
+  assert.equal(canTransitionOrder("delivered", "accepted"), false);
 });
