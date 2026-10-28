@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import { apiRequest } from "@/lib/api";
+import { apiRequest, assetUrl } from "@/lib/api";
 
 type Product = {
   _id: string;
@@ -18,6 +18,7 @@ type Product = {
     phone?: string;
     collegeName?: string;
   };
+  reviews?: Array<{ _id: string; rating: number; comment?: string; user?: { name?: string }; createdAt: string }>;
 };
 
 export default function ProductDetailPage() {
@@ -26,6 +27,8 @@ export default function ProductDetailPage() {
 
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
+  const [quantity, setQuantity] = useState(1);
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -55,10 +58,10 @@ export default function ProductDetailPage() {
     try {
       await apiRequest("/orders", "POST", {
         productId: product?._id,
-        quantity: 1,
+        quantity,
       });
 
-      alert("Order placed successfully!");
+      setMessage("Order placed successfully");
       router.push("/dashboard/user/orders");
     } catch (err: unknown) {
     if (err instanceof Error) {
@@ -67,6 +70,13 @@ export default function ProductDetailPage() {
         alert("Failed to place order");
     }
     }
+  };
+
+  const reportProduct = async () => {
+    const details = window.prompt("Briefly describe the issue with this listing:");
+    if (!details) return;
+    try { await apiRequest("/reports", "POST", { productId: product?._id, reason: "other", details }); setMessage("Report submitted for admin review"); }
+    catch (err) { setMessage(err instanceof Error ? err.message : "Could not submit report"); }
   };
 
   if (loading) {
@@ -106,7 +116,7 @@ export default function ProductDetailPage() {
         <div className="border border-slate-200 bg-white">
           {product.images && product.images.length > 0 ? (
             <Image
-              src={product.images[0]}
+              src={assetUrl(product.images[0])}
               alt={product.title}
               width={600}
               height={400}
@@ -130,6 +140,9 @@ export default function ProductDetailPage() {
           <p className="text-sm text-slate-500">
             Stock: {product.stock ?? 0}
           </p>
+          <label className="block text-sm font-semibold">Quantity
+            <input type="number" min="1" max={product.stock || 1} value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} className="ml-3 w-20 border p-2" />
+          </label>
 
           <div className="border-t pt-4">
             <p className="text-xs uppercase text-slate-400">Seller</p>
@@ -163,6 +176,14 @@ export default function ProductDetailPage() {
               </a>
             )}
           </div>
+          <button onClick={reportProduct} className="text-sm font-semibold text-red-700 underline">Report this listing</button>
+          {message && <p className="border bg-slate-50 p-3 text-sm">{message}</p>}
+        </div>
+      </section>
+      <section className="border border-slate-200 bg-white p-6">
+        <h2 className="text-xl font-black">Buyer reviews</h2>
+        <div className="mt-4 space-y-4">
+          {product.reviews?.length ? product.reviews.map((review) => <article key={review._id} className="border-t pt-4"><p className="font-bold">{review.user?.name || "Buyer"} · {review.rating}/5</p><p className="mt-1 text-sm text-slate-600">{review.comment || "No written comment"}</p></article>) : <p className="text-sm text-slate-500">No reviews yet.</p>}
         </div>
       </section>
     </div>

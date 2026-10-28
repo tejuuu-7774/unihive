@@ -23,6 +23,8 @@ export const dashboardNavigation: Record<
     { label: "Add Product", href: "/dashboard/seller/add-product" },
     { label: "Orders", href: "/dashboard/seller/orders" },
     { label: "Earnings", href: "/dashboard/seller/earnings" },
+    { label: "Marketplace", href: "/dashboard/user/browse" },
+    { label: "Profile", href: "/dashboard/user/profile" },
   ],
 
   admin: [
@@ -30,8 +32,8 @@ export const dashboardNavigation: Record<
     { label: "Users", href: "/dashboard/admin/users" },
     { label: "Sellers", href: "/dashboard/admin/verifications" },
     { label: "Products", href: "/dashboard/admin/products" },
+    { label: "Orders", href: "/dashboard/admin/orders" },
     { label: "Reports", href: "/dashboard/admin/reports" },
-    { label: "Settings", href: "/dashboard/admin/settings" },
   ],
 };
 
@@ -48,5 +50,9 @@ export function getDashboardHome(role: DashboardRole) {
 
 export function isDashboardPathAllowed(pathname: string, role: DashboardRole) {
   if (pathname === "/dashboard") return true;
+  if (
+    role === "seller" &&
+    ["/dashboard/user/browse", "/dashboard/user/product", "/dashboard/user/orders", "/dashboard/user/profile"].some((path) => pathname.startsWith(path))
+  ) return true;
   return pathname.startsWith(`/dashboard/${role}`);
 }

@@ -1,99 +1,24 @@
 "use client";
 
-const sellerStats = [
-  { label: "Revenue Summary", value: "Rs. 48,600", note: "+12% vs last month" },
-  { label: "Total Products", value: "24", note: "18 active listings" },
-  { label: "Orders Received", value: "63", note: "11 pending dispatch" },
-];
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { apiRequest } from "@/lib/api";
 
-const products = [
-  { name: "Mechanical Drawing Kit", price: "Rs. 780", status: "Active" },
-  { name: "Campus Hoodie - Navy", price: "Rs. 1,150", status: "Low stock" },
-  { name: "Scientific Calculator", price: "Rs. 950", status: "Active" },
-  { name: "Exam Prep Notes Bundle", price: "Rs. 320", status: "Draft" },
-];
+type Analytics = { totalProducts: number; approvedProducts: number; pendingProducts: number; totalOrders: number; requestedOrders: number; deliveredOrders: number; grossRevenue: number };
 
 export default function SellerDashboardPage() {
-  return (
-    <div className="mx-auto max-w-7xl space-y-8">
-      <section className="flex flex-col gap-4 border border-slate-200 bg-white px-6 py-6 md:flex-row md:items-end md:justify-between md:px-8">
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#7C3AED]">
-            Seller Dashboard
-          </p>
-          <h1 className="mt-3 text-3xl font-black uppercase tracking-tight text-slate-900">
-            Operations overview
-          </h1>
-          <p className="mt-2 max-w-2xl text-sm text-slate-500">
-            Monitor sales, inventory movement, and incoming orders from one clean
-            control surface.
-          </p>
-        </div>
-        <button className="border border-slate-900 bg-slate-900 px-5 py-3 text-[11px] font-bold uppercase tracking-[0.2em] text-white transition-colors hover:bg-[#7C3AED] hover:border-[#7C3AED]">
-          Add Product
-        </button>
-      </section>
-
-      <section className="grid gap-4 md:grid-cols-3">
-        {sellerStats.map((stat) => (
-          <div key={stat.label} className="border border-slate-200 bg-white px-6 py-5">
-            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">
-              {stat.label}
-            </p>
-            <p className="mt-4 text-3xl font-black text-slate-900">{stat.value}</p>
-            <p className="mt-2 text-sm text-slate-500">{stat.note}</p>
-          </div>
-        ))}
-      </section>
-
-      <section className="border border-slate-200 bg-white">
-        <div className="flex flex-col gap-3 border-b border-slate-200 px-6 py-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h2 className="text-sm font-bold uppercase tracking-[0.18em] text-slate-900">
-              Product Performance
-            </h2>
-            <p className="mt-1 text-sm text-slate-500">
-              Track listing status and pricing at a glance.
-            </p>
-          </div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500">
-            Updated today
-          </p>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="min-w-full border-collapse">
-            <thead>
-              <tr className="border-b border-slate-200 text-left">
-                <th className="px-6 py-3 text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">
-                  Product Name
-                </th>
-                <th className="px-6 py-3 text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">
-                  Price
-                </th>
-                <th className="px-6 py-3 text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">
-                  Status
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {products.map((product) => (
-                <tr key={product.name} className="border-b border-slate-200">
-                  <td className="px-6 py-4 text-sm font-semibold text-slate-900">
-                    {product.name}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-slate-500">
-                    {product.price}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-slate-900">
-                    {product.status}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-    </div>
-  );
+  const [stats, setStats] = useState<Analytics | null>(null);
+  const [error, setError] = useState("");
+  useEffect(() => { apiRequest("/seller/analytics").then((res) => setStats(res.data)).catch((err) => setError(err.message)); }, []);
+  return <div className="mx-auto max-w-7xl space-y-8">
+    <section className="flex flex-wrap items-end justify-between gap-4 border bg-white p-6"><div><p className="text-xs font-bold uppercase tracking-[0.22em] text-[#7C3AED]">Seller dashboard</p><h1 className="mt-2 text-3xl font-black">Operations overview</h1><p className="mt-2 text-base text-slate-600">Manage listings, orders, and direct-payment revenue.</p></div><Link href="/dashboard/seller/add-product" className="bg-slate-900 px-5 py-3 text-sm font-bold text-white">Add product</Link></section>
+    {error && <p className="bg-red-50 p-4 text-red-700">{error}</p>}
+    <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{[
+      ["Gross order value", stats ? `₹${stats.grossRevenue.toLocaleString("en-IN")}` : "…"],
+      ["Products", stats?.totalProducts ?? "…"],
+      ["Pending orders", stats?.requestedOrders ?? "…"],
+      ["Delivered", stats?.deliveredOrders ?? "…"],
+    ].map(([label, value]) => <div key={label} className="border bg-white p-6"><p className="text-sm text-slate-500">{label}</p><p className="mt-3 text-3xl font-black">{value}</p></div>)}</section>
+    <section className="grid gap-4 md:grid-cols-3"><Link href="/dashboard/seller/products" className="border bg-white p-6 hover:border-[#7C3AED]"><h2 className="font-bold">Manage products</h2><p className="mt-2 text-sm text-slate-500">{stats?.approvedProducts || 0} approved · {stats?.pendingProducts || 0} pending</p></Link><Link href="/dashboard/seller/orders" className="border bg-white p-6 hover:border-[#7C3AED]"><h2 className="font-bold">Process orders</h2><p className="mt-2 text-sm text-slate-500">{stats?.totalOrders || 0} total orders</p></Link><Link href="/dashboard/seller/earnings" className="border bg-white p-6 hover:border-[#7C3AED]"><h2 className="font-bold">View earnings</h2><p className="mt-2 text-sm text-slate-500">Direct-payment order summary</p></Link></section>
+  </div>;
 }

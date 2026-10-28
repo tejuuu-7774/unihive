@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { apiRequest } from "@/lib/api";
+import { apiRequest, assetUrl } from "@/lib/api";
 import Image from "next/image";
 
 type Product = {
@@ -20,30 +20,37 @@ type Product = {
 export default function BrowsePage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [productType, setProductType] = useState("");
+  const [sortBy, setSortBy] = useState("newest");
+  const [error, setError] = useState("");
+
+  const fetchProducts = useCallback(async (query = "") => {
+    setLoading(true); setError("");
+    try {
+      const res = await apiRequest(`/products${query ? `?${query}` : ""}`);
+      setProducts(res.data?.products || []);
+    } catch (err) { setError(err instanceof Error ? err.message : "Could not load products"); }
+    finally { setLoading(false); }
+  }, []);
 
   useEffect(() => {
     let active = true;
-
-    const fetchProducts = async () => {
-      try {
-        const res = await apiRequest("/products");
-
-        if (!active) return;
-
-        setProducts(res.data?.products || []);
-      } catch (err) {
-        console.error("Failed to fetch products", err);
-      } finally {
-        if (active) setLoading(false);
-      }
-    };
-
-    fetchProducts();
-
-    return () => {
-      active = false;
-    };
+    apiRequest("/products")
+      .then((res) => { if (active) setProducts(res.data?.products || []); })
+      .catch((err) => { if (active) setError(err instanceof Error ? err.message : "Could not load products"); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
   }, []);
+
+  const filter = (event: FormEvent) => {
+    event.preventDefault();
+    const params = new URLSearchParams();
+    if (search.trim()) params.set("search", search.trim());
+    if (productType) params.set("productType", productType);
+    params.set("sortBy", sortBy);
+    fetchProducts(params.toString());
+  };
 
   return (
     <div className="mx-auto max-w-7xl space-y-8">
@@ -61,6 +68,14 @@ export default function BrowsePage() {
         </p>
       </section>
 
+      <form onSubmit={filter} className="grid gap-3 border border-slate-200 bg-white p-4 md:grid-cols-[1fr_180px_180px_auto]">
+        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search products, categories…" className="border p-3 text-sm" />
+        <select value={productType} onChange={(e) => setProductType(e.target.value)} className="border p-3 text-sm"><option value="">All types</option><option value="physical">Physical</option><option value="digital">Digital</option><option value="service">Services</option></select>
+        <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="border p-3 text-sm"><option value="newest">Newest</option><option value="priceAsc">Price: low to high</option><option value="priceDesc">Price: high to low</option><option value="ratingDesc">Top rated</option></select>
+        <button className="bg-slate-900 px-5 py-3 text-sm font-bold text-white">Apply</button>
+      </form>
+      {error && <p className="border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</p>}
+
       {/* PRODUCTS GRID */}
       <section className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 
@@ -77,7 +92,7 @@ export default function BrowsePage() {
               <div className="h-48 bg-slate-100 flex items-center justify-center">
                 {p.images && p.images.length > 0 ? (
                   <Image
-                    src={p.images[0]}
+                    src={assetUrl(p.images[0])}
                     alt={p.title}
                     width={400}
                     height={300}
@@ -128,11 +143,12 @@ export default function BrowsePage() {
                   </Link>
 
                   {/* BUY */}
-                  <button
+                  <Link
+                    href={`/dashboard/user/product/${p._id}`}
                     className="flex-1 border border-slate-900 bg-slate-900 px-3 py-2 text-[10px] font-bold uppercase text-white hover:bg-[#7C3AED]"
                   >
                     Buy
-                  </button>
+                  </Link>
 
                 </div>
               </div>

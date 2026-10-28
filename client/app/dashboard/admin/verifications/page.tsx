@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { apiRequest } from "@/lib/api";
+import { apiRequest, apiUrl } from "@/lib/api";
 
 type Verification = {
   _id: string;
   name: string;
   email: string;
+  collegeName?: string;
+  studentIdCard?: string;
 };
 
 export default function AdminVerificationsPage() {
@@ -54,7 +56,9 @@ export default function AdminVerificationsPage() {
               <tr key={v._id} className="border-b border-slate-200">
                 <td className="px-6 py-4">{v.name}</td>
                 <td className="px-6 py-4">{v.email}</td>
+                <td className="px-6 py-4">{v.collegeName || "—"}</td>
                 <td className="px-6 py-4 flex gap-2">
+                  {v.studentIdCard && <a href={apiUrl(`/admin/verifications/${v._id}/document`)} target="_blank" rel="noreferrer" className="border px-3 py-2 text-sm font-semibold">View ID</a>}
                   <button onClick={() => approve(v._id)}>Approve</button>
                   <button onClick={() => reject(v._id)}>Reject</button>
                 </td>

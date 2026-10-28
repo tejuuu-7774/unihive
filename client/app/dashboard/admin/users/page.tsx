@@ -13,6 +13,7 @@ type User = {
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -54,8 +55,17 @@ export default function AdminUsersPage() {
     );
   };
 
+  const deleteUser = async (id: string) => {
+    if (!window.confirm("Disable and anonymize this account? Order history will be preserved.")) return;
+    try {
+      await apiRequest(`/admin/users/${id}`, "DELETE");
+      setUsers((prev) => prev.filter((user) => user._id !== id));
+    } catch (err) { setError(err instanceof Error ? err.message : "Could not delete user"); }
+  };
+
   return (
     <div className="border border-slate-200 bg-white">
+      {error && <p className="m-4 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
       <div className="border-b border-slate-200 px-6 py-4">
         <h2 className="text-sm font-bold uppercase tracking-[0.18em] text-slate-900">
           User Management
@@ -90,6 +100,8 @@ export default function AdminUsersPage() {
                     {u.isBanned ? "Unban" : "Ban"}
                   </button>
                 )}
+
+                {u.role !== "admin" && <button onClick={() => deleteUser(u._id)} className="border border-red-300 px-3 py-2 text-xs text-red-700">Delete</button>}
 
                 {/* seller downgrade */}
                 {u.role === "seller" && (
