@@ -56,7 +56,7 @@ export default function RegisterPage() {
 
           <div className="mb-10 text-center">
             <Link href="/" className="inline-flex items-center gap-2 mb-8">
-              <Image src="/logo-icon.png" alt="UniHive" width={28} height={28} />
+              <Image src="/logo-icon.png" alt="UniHive" width={28} height={28} style={{ width: "auto", height: "auto" }} />
               <span className="text-base font-bold uppercase">UniHive</span>
             </Link>
             <h1 className="text-3xl font-black uppercase">Create Account</h1>

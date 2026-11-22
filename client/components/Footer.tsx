@@ -32,10 +32,10 @@ export default function Footer() {
           <div>
             <h4 className="text-xs font-bold uppercase tracking-widest text-slate-900">Marketplace</h4>
             <ul className="mt-6 space-y-3">
-              <li><Link href="#" className="text-sm text-slate-500 hover:text-[#7C3AED]">Digital Notes</Link></li>
-              <li><Link href="#" className="text-sm text-slate-500 hover:text-[#7C3AED]">Handmade Goods</Link></li>
-              <li><Link href="#" className="text-sm text-slate-500 hover:text-[#7C3AED]">Campus Services</Link></li>
-              <li><Link href="#" className="text-sm text-slate-500 hover:text-[#7C3AED]">Student Deals</Link></li>
+              <li><Link href="/login" className="text-sm text-slate-500 hover:text-[#7C3AED]">Digital Notes</Link></li>
+              <li><Link href="/login" className="text-sm text-slate-500 hover:text-[#7C3AED]">Handmade Goods</Link></li>
+              <li><Link href="/login" className="text-sm text-slate-500 hover:text-[#7C3AED]">Campus Services</Link></li>
+              <li><Link href="/login" className="text-sm text-slate-500 hover:text-[#7C3AED]">Student Deals</Link></li>
             </ul>
           </div>
 
@@ -43,10 +43,10 @@ export default function Footer() {
           <div>
             <h4 className="text-xs font-bold uppercase tracking-widest text-slate-900">Platform</h4>
             <ul className="mt-6 space-y-3">
-              <li><Link href="#" className="text-sm text-slate-500 hover:text-[#7C3AED]">How it Works</Link></li>
-              <li><Link href="#" className="text-sm text-slate-500 hover:text-[#7C3AED]">Seller Dashboard</Link></li>
-              <li><Link href="#" className="text-sm text-slate-500 hover:text-[#7C3AED]">Verification</Link></li>
-              <li><Link href="#" className="text-sm text-slate-500 hover:text-[#7C3AED]">Safety Rules</Link></li>
+              <li><Link href="/#how-it-works" className="text-sm text-slate-500 hover:text-[#7C3AED]">How it Works</Link></li>
+              <li><Link href="/dashboard" className="text-sm text-slate-500 hover:text-[#7C3AED]">Seller Dashboard</Link></li>
+              <li><Link href="/dashboard/user/profile" className="text-sm text-slate-500 hover:text-[#7C3AED]">Verification</Link></li>
+              <li><Link href="/safety" className="text-sm text-slate-500 hover:text-[#7C3AED]">Safety Rules</Link></li>
             </ul>
           </div>
 
@@ -54,10 +54,10 @@ export default function Footer() {
           <div>
             <h4 className="text-xs font-bold uppercase tracking-widest text-slate-900">Support</h4>
             <ul className="mt-6 space-y-3">
-              <li><Link href="#" className="text-sm text-slate-500 hover:text-[#7C3AED]">Help Center</Link></li>
-              <li><Link href="#" className="text-sm text-slate-500 hover:text-[#7C3AED]">Terms of Service</Link></li>
-              <li><Link href="#" className="text-sm text-slate-500 hover:text-[#7C3AED]">Privacy Policy</Link></li>
-              <li><Link href="#" className="text-sm text-slate-500 hover:text-[#7C3AED]">Contact Us</Link></li>
+              <li><Link href="/support" className="text-sm text-slate-500 hover:text-[#7C3AED]">Help Center</Link></li>
+              <li><Link href="/terms" className="text-sm text-slate-500 hover:text-[#7C3AED]">Terms of Service</Link></li>
+              <li><Link href="/privacy" className="text-sm text-slate-500 hover:text-[#7C3AED]">Privacy Policy</Link></li>
+              <li><Link href="/support" className="text-sm text-slate-500 hover:text-[#7C3AED]">Contact Us</Link></li>
             </ul>
           </div>
         </div>

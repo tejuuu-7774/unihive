@@ -41,6 +41,7 @@ export default function Home() {
               alt="UniHive"
               width={28}
               height={28}
+              priority
               className="group-hover:opacity-80 transition-opacity"
               style={{ width: "auto", height: "auto" }}
             />
@@ -70,7 +71,7 @@ export default function Home() {
         </section>
 
         {/* Feature Cards */}
-        <section className="mx-auto w-full max-w-[1300px] px-8 pb-32">
+        <section id="how-it-works" className="mx-auto w-full max-w-[1300px] scroll-mt-8 px-8 pb-32">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               { icon: <IconStore />, title: "Commerce", desc: "A streamlined system to list, manage, and sell physical goods on campus." },
