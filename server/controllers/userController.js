@@ -8,6 +8,7 @@ const { isValidObjectId, isProvided } = require("../utils/validation");
 const asyncHandler = require("../utils/asyncHandler");
 const AppError = require("../utils/AppError");
 const { successResponse } = require("../utils/response");
+const { INDIAN_MOBILE_ERROR, normalizeIndianPhone } = require("../utils/phone");
 
 exports.requestVerification = asyncHandler(async (req, res) => {
   const { collegeName } = req.body;
@@ -131,35 +132,30 @@ exports.updateProfile = asyncHandler(async (req, res) => {
 
   // Name
   if (isProvided(req.body.name)) {
-    user.name = req.body.name.trim();
+    const name = req.body.name.trim();
+    if (!name || name.length > 80) {
+      throw new AppError("Name must be between 1 and 80 characters", 400);
+    }
+    user.name = name;
   }
 
   // Phone
   if (isProvided(req.body.phone)) {
-    const phone = req.body.phone.toString().trim();
-
-    if (!/^\d{10,15}$/.test(phone)) {
-      throw new AppError(
-        "Phone number must be digits only (10–15 digits, include country code)",
-        400
-      );
-    }
-
+    const phone = normalizeIndianPhone(req.body.phone);
+    if (!phone) throw new AppError(INDIAN_MOBILE_ERROR, 400);
     user.phone = phone;
   }
 
   // WhatsApp Number (optional override)
   if (isProvided(req.body.whatsappNumber)) {
-    const whatsapp = req.body.whatsappNumber.toString().trim();
-
-    if (!/^\d{10,15}$/.test(whatsapp)) {
-      throw new AppError(
-        "WhatsApp number must be digits only (10–15 digits, include country code)",
-        400
-      );
+    const rawWhatsapp = req.body.whatsappNumber.toString().trim();
+    if (!rawWhatsapp) {
+      user.whatsappNumber = undefined;
+    } else {
+      const whatsapp = normalizeIndianPhone(rawWhatsapp);
+      if (!whatsapp) throw new AppError(INDIAN_MOBILE_ERROR, 400);
+      user.whatsappNumber = whatsapp;
     }
-
-    user.whatsappNumber = whatsapp;
   }
 
   // Bio

@@ -1,11 +1,12 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+const BASE_URL = "/api/proxy";
+const ASSET_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export const apiUrl = (url: string) => `${BASE_URL}${url}`;
 
 export const assetUrl = (url?: string) => {
   if (!url) return "";
   if (/^(https?:|data:|blob:)/.test(url)) return url;
-  return `${BASE_URL}${url}`;
+  return `${ASSET_BASE_URL}${url}`;
 };
 
 export const apiRequest = async (url: string, method = "GET", body?: unknown) => {

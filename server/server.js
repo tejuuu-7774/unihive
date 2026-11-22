@@ -20,9 +20,22 @@ dotenv.config();
 connectDB();
 
 const app = express();
+const normalizeOrigin = (value) => {
+  if (!value) return null;
+  try {
+    return new URL(value).origin;
+  } catch {
+    const protocol = value.startsWith("localhost") ? "http://" : "https://";
+    try {
+      return new URL(`${protocol}${value}`).origin;
+    } catch {
+      return null;
+    }
+  }
+};
 const allowedOrigins = [
   "http://localhost:3000",
-  process.env.FRONTEND_URL,
+  normalizeOrigin(process.env.FRONTEND_URL),
 ].filter(Boolean);
 
 app.use(express.json());

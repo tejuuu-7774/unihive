@@ -18,7 +18,7 @@ UniHive is a direct-payment student marketplace built with Next.js, Express, and
 ## Local setup
 
 1. Copy `server/.env.example` to `server/.env` and configure MongoDB and a strong JWT secret.
-2. Copy `client/.env.example` to `client/.env.local`.
+2. Copy `client/.env.example` to `client/.env.local`. `API_URL` is used by the same-origin authentication proxy; `NEXT_PUBLIC_API_URL` is only used to resolve media URLs.
 3. Install packages in `client` and `server` with `npm install`.
 4. Run `npm run dev:server` and `npm run dev:client` in separate terminals from the repository root.
 5. Seed the first administrator with `npm --prefix server run seed:admin`.

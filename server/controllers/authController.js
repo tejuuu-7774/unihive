@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 const asyncHandler = require("../utils/asyncHandler");
 const { successResponse } = require("../utils/response");
 const AppError = require("../utils/AppError");
+const { INDIAN_MOBILE_ERROR, normalizeIndianPhone } = require("../utils/phone");
 
 
 const EMAIL_REGEX = /^\S+@\S+\.\S+$/;
@@ -31,7 +32,15 @@ exports.registerUser = asyncHandler(async (req, res) => {
     throw new AppError("Name, email, password, and phone are required", 400);
   }
 
-  if (!EMAIL_REGEX.test(email)) {
+  const normalizedEmail = email.trim().toLowerCase();
+  const normalizedName = name.trim();
+  const normalizedPhone = normalizeIndianPhone(phone);
+
+  if (!normalizedName || normalizedName.length > 80) {
+    throw new AppError("Name must be between 1 and 80 characters", 400);
+  }
+
+  if (!EMAIL_REGEX.test(normalizedEmail)) {
     throw new AppError("Please provide a valid email", 400);
   }
 
@@ -39,10 +48,7 @@ exports.registerUser = asyncHandler(async (req, res) => {
     throw new AppError("Password must be at least 6 characters long", 400);
   }
 
-  const normalizedEmail = email.trim().toLowerCase();
-  if (!/^\d{10,15}$/.test(phone.toString().trim())) {
-    throw new AppError("Phone number must contain 10 to 15 digits", 400);
-  }
+  if (!normalizedPhone) throw new AppError(INDIAN_MOBILE_ERROR, 400);
   const userExists = await User.findOne({ email: normalizedEmail, isDeleted: false });
 
   if (userExists) {
@@ -50,10 +56,10 @@ exports.registerUser = asyncHandler(async (req, res) => {
   }
 
   const user = await User.create({
-    name,
+    name: normalizedName,
     email: normalizedEmail,
     password: await bcrypt.hash(password, 10),
-    phone: phone.toString().trim(),
+    phone: normalizedPhone,
   });
   const token = generateToken(user._id);
 

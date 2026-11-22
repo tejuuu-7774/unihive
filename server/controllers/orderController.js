@@ -5,6 +5,7 @@ const AppError = require("../utils/AppError");
 const { isValidObjectId } = require("../utils/validation");
 const { successResponse } = require("../utils/response");
 const { canTransitionOrder } = require("../utils/orderTransitions");
+const { normalizeIndianPhone } = require("../utils/phone");
 
 exports.createOrder = asyncHandler(async (req, res) => {
   const {
@@ -56,7 +57,9 @@ exports.createOrder = asyncHandler(async (req, res) => {
     product: product._id,
     quantity: Number(quantity),
     totalPrice: product.price * Number(quantity),
-    sellerContact: product.seller.whatsappNumber || product.seller.phone,
+    sellerContact:
+      normalizeIndianPhone(product.seller.whatsappNumber || product.seller.phone) ||
+      product.seller.phone,
     chatType,
     paymentType,
     statusHistory: [

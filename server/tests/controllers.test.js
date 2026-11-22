@@ -4,6 +4,7 @@ const assert = require("node:assert/strict");
 const { isValidObjectId, isProvided, parseSort } = require("../utils/validation");
 const { authorizeRoles, isSeller } = require("../middleware/authMiddleware");
 const { canTransitionOrder } = require("../utils/orderTransitions");
+const { normalizeIndianPhone } = require("../utils/phone");
 
 test("validation helpers work for ids and provided values", () => {
   assert.equal(isValidObjectId("507f1f77bcf86cd799439011"), true);
@@ -73,4 +74,17 @@ test("order transitions enforce the marketplace lifecycle", () => {
   assert.equal(canTransitionOrder("requested", "shipped"), false);
   assert.equal(canTransitionOrder("accepted", "shipped"), true);
   assert.equal(canTransitionOrder("delivered", "accepted"), false);
+});
+
+test("Indian mobile numbers are accepted in familiar formats and normalized", () => {
+  assert.equal(normalizeIndianPhone("9876543210"), "919876543210");
+  assert.equal(normalizeIndianPhone("+91 98765 43210"), "919876543210");
+  assert.equal(normalizeIndianPhone("09876543210"), "919876543210");
+});
+
+test("invalid Indian mobile numbers are rejected", () => {
+  assert.equal(normalizeIndianPhone("1234567890"), null);
+  assert.equal(normalizeIndianPhone("98765"), null);
+  assert.equal(normalizeIndianPhone("91987654321099"), null);
+  assert.equal(normalizeIndianPhone("not-a-number"), null);
 });

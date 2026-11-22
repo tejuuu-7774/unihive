@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiRequest } from "@/lib/api";
+import { displayIndianPhone } from "@/lib/phone";
 
 type Profile = {
   name: string; email: string; phone: string; whatsappNumber?: string; bio?: string;
@@ -18,14 +19,27 @@ export default function ProfilePage() {
   const [collegeName, setCollegeName] = useState("");
   const [studentId, setStudentId] = useState<File | null>(null);
 
-  useEffect(() => { apiRequest("/users/me").then((res) => { setProfile(res.data); setCollegeName(res.data.collegeName || ""); }).catch((err) => setError(err.message)); }, []);
+  useEffect(() => { apiRequest("/users/me").then((res) => {
+    setProfile({
+      ...res.data,
+      phone: displayIndianPhone(res.data.phone),
+      whatsappNumber: displayIndianPhone(res.data.whatsappNumber),
+    });
+    setCollegeName(res.data.collegeName || "");
+  }).catch((err) => setError(err.message)); }, []);
 
   const saveProfile = async (event: FormEvent) => {
     event.preventDefault(); if (!profile) return;
     try {
       setError("");
-      const res = await apiRequest("/users/me", "PUT", { name: profile.name, phone: profile.phone, whatsappNumber: profile.whatsappNumber || profile.phone, bio: profile.bio || "" });
-      setProfile({ ...profile, ...res.data }); setMessage("Profile saved");
+      const res = await apiRequest("/users/me", "PUT", { name: profile.name, phone: profile.phone, whatsappNumber: profile.whatsappNumber || "", bio: profile.bio || "" });
+      setProfile({
+        ...profile,
+        ...res.data,
+        phone: displayIndianPhone(res.data.phone),
+        whatsappNumber: displayIndianPhone(res.data.whatsappNumber),
+      });
+      setMessage("Profile saved");
     } catch (err) { setError(err instanceof Error ? err.message : "Could not save profile"); }
   };
 
@@ -52,8 +66,8 @@ export default function ProfilePage() {
         <div><p className="text-xs font-bold uppercase tracking-[0.22em] text-[#7C3AED]">Account</p><h1 className="mt-2 text-3xl font-black">Your profile</h1></div>
         <label className="block text-sm font-semibold">Name<input value={profile.name} onChange={(e) => setProfile({ ...profile, name: e.target.value })} className="mt-2 w-full border p-3" required /></label>
         <label className="block text-sm font-semibold">Email<input value={profile.email} className="mt-2 w-full border bg-slate-50 p-3" disabled /></label>
-        <label className="block text-sm font-semibold">Phone<input value={profile.phone} onChange={(e) => setProfile({ ...profile, phone: e.target.value })} className="mt-2 w-full border p-3" required /></label>
-        <label className="block text-sm font-semibold">WhatsApp<input value={profile.whatsappNumber || ""} onChange={(e) => setProfile({ ...profile, whatsappNumber: e.target.value })} className="mt-2 w-full border p-3" /></label>
+        <label className="block text-sm font-semibold">Mobile number<input type="tel" inputMode="tel" maxLength={18} placeholder="9876543210" value={profile.phone} onChange={(e) => setProfile({ ...profile, phone: e.target.value })} className="mt-2 w-full border p-3" required /><span className="mt-1 block text-xs font-normal text-slate-500">Use your 10-digit Indian mobile number. +91 is optional.</span></label>
+        <label className="block text-sm font-semibold">WhatsApp number <span className="font-normal text-slate-500">(optional)</span><input type="tel" inputMode="tel" maxLength={18} placeholder="Same as mobile if left blank" value={profile.whatsappNumber || ""} onChange={(e) => setProfile({ ...profile, whatsappNumber: e.target.value })} className="mt-2 w-full border p-3" /></label>
         <label className="block text-sm font-semibold">Bio<textarea value={profile.bio || ""} onChange={(e) => setProfile({ ...profile, bio: e.target.value })} className="mt-2 min-h-28 w-full border p-3" maxLength={500} /></label>
         <div className="flex flex-wrap gap-3"><button className="bg-slate-900 px-5 py-3 text-sm font-bold text-white">Save profile</button><button type="button" onClick={deleteAccount} className="border border-red-300 px-5 py-3 text-sm font-bold text-red-700">Delete account</button></div>
       </form>
