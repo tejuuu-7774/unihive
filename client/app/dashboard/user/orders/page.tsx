@@ -67,7 +67,7 @@ export default function OrdersPage() {
         </div>
       ) : <div className="space-y-4">{orders.map((order) => (
         <article key={order._id} className="grid gap-5 border border-slate-200 bg-white p-5 md:grid-cols-[96px_1fr_auto] md:items-center">
-          <div className="h-24 overflow-hidden bg-slate-100">{order.product?.images?.[0] ? <Image src={assetUrl(order.product.images[0])} alt="" width={96} height={96} className="h-full w-full object-cover" /> : null}</div>
+          <div className="h-24 overflow-hidden bg-slate-100">{order.product?.images?.[0] ? <Image src={assetUrl(order.product.images[0])} alt="" width={96} height={96} unoptimized className="h-full w-full object-cover" /> : null}</div>
           <div>
             <div className="flex flex-wrap items-center gap-3"><h2 className="text-lg font-bold">{order.product?.title || "Archived product"}</h2><span className="border px-2 py-1 text-xs font-bold uppercase">{order.status}</span></div>
             <p className="mt-2 text-sm text-slate-600">Seller: {order.seller?.name || "Unavailable"} · Quantity: {order.quantity}</p>

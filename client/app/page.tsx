@@ -42,8 +42,7 @@ export default function Home() {
               width={28}
               height={28}
               priority
-              className="group-hover:opacity-80 transition-opacity"
-              style={{ width: "auto", height: "auto" }}
+              className="h-7 w-7 object-contain transition-opacity group-hover:opacity-80"
             />
             <span className="text-lg font-bold tracking-tighter uppercase text-slate-900">UniHive</span>
           </button>

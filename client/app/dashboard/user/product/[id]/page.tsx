@@ -120,6 +120,7 @@ export default function ProductDetailPage() {
               alt={product.title}
               width={600}
               height={400}
+              unoptimized
               className="w-full h-[350px] object-cover"
             />
           ) : (

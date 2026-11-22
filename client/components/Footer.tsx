@@ -19,7 +19,7 @@ export default function Footer() {
                 alt="UniHive"
                 width={28}
                 height={28}
-                style={{ width: "auto", height: "auto" }}
+                className="h-7 w-7 object-contain"
               />
               <span className="text-lg font-bold tracking-tight text-slate-900">UniHive</span>
             </Link>

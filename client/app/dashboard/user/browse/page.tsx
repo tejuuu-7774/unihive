@@ -96,6 +96,7 @@ export default function BrowsePage() {
                     alt={p.title}
                     width={400}
                     height={300}
+                    unoptimized
                     className="h-full w-full object-cover"
                   />
                 ) : (

@@ -75,8 +75,7 @@ export default function DashboardLayout({
           alt="UniHive"
           width={36}
           height={36}
-          style={{ width: "auto", height: "auto" }} // ✅ fix warning
-          className="opacity-20"
+          className="h-9 w-9 object-contain opacity-20"
         />
         <p className="mt-4 text-[10px] font-bold uppercase tracking-[0.28em] text-slate-400">
           Loading Dashboard

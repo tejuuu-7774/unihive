@@ -51,7 +51,7 @@ export default function LoginPage() {
 
           <div className="mb-10 text-center">
             <Link href="/" className="inline-flex items-center gap-2 mb-8">
-              <Image src="/logo-icon.png" alt="UniHive" width={28} height={28} style={{ width: "auto", height: "auto" }} />
+              <Image src="/logo-icon.png" alt="UniHive" width={28} height={28} className="h-7 w-7 object-contain" />
               <span className="text-base font-bold uppercase">UniHive</span>
             </Link>
             <h1 className="text-3xl font-black uppercase">Welcome Back</h1>

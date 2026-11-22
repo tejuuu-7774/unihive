@@ -17,7 +17,7 @@ export default function Sidebar({ role, pathname }: SidebarProps) {
       <div className="flex h-full flex-col">
         <div className="border-b border-slate-200 px-6 py-6">
           <Link href="/dashboard" className="inline-flex items-center gap-3">
-            <Image src="/logo-icon.png" alt="UniHive" width={26} height={26} />
+            <Image src="/logo-icon.png" alt="UniHive" width={26} height={26} className="h-[26px] w-[26px] object-contain" />
             <div>
               <p className="text-sm font-black uppercase tracking-tight text-slate-900">
                 UniHive
